@@ -1,0 +1,34 @@
+/*
+ * Style for the Evanescent form
+ */
+
+.evanescent-welcome-form {
+  margin-top: 15px;
+  padding: 15px;
+  background-color: #f9f9f9;
+  max-width: 767px;
+}
+.evanescent-welcome-form input,
+.evanescent-welcome-form input[type="text"],
+.evanescent-welcome-form input[type="password"],
+.evanescent-welcome-form input[type="email"],
+.evanescent-welcome-form input[type="date"],
+.evanescent-welcome-form input[type="tel"],
+.evanescent-welcome-form textarea {
+  margin: 1px 1px 10px 1px;
+  padding: 3px 5px;
+  border: 1px solid #cccccc
+}
+
+.evanescent-welcome-form input[type="submit"],
+.evanescent-welcome-form button {
+  padding: 5px 10px;
+  color: #fff;
+  background-color: #5cb85c;
+  border: none;
+  cursor: pointer;
+}
+.evanescent-welcome-form input[type="submit"]:hover,
+.evanescent-welcome-form button:hover {
+  background-color: #449d44;
+}
