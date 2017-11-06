@@ -93,16 +93,17 @@ class Invitees_List extends WP_List_Table {
 	 */
 	public function column_default( $item, $column_name ) {
 		switch ( $column_name ) {
-			/*
-			case 'first_name':
-        return $item[ $column_name ];
-      case 'last_name':
-        return $item[ $column_name ];
-       */
+
       case 'email':
         return $item[ $column_name ];
 	    case 'viewed':
-	      return boolval($item[ $column_name ]) ? $item[ 'timestamp' ] : 'Not viewed';
+	      if (boolval($item[ $column_name ])) {
+	        $datetime = $item[ 'timestamp' ];//strtotime('M DD, YY at g:i A', $item[ 'timestamp' ]);
+	        return $datetime;
+	      }
+	      else {
+	      	return 'Not viewed';
+	      }
 	    case 'actions':
 	      return '<button class="evanescent-admin__show" type="button">Show Email</button>';
 			default:

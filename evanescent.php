@@ -449,7 +449,7 @@ class Evanescent {
   public function timestamp_expired($timestamp) {
     $time = strtotime($timestamp);
     $curtime = time();
-    if(($curtime - $time) <= 3600) {  // 3600 seconds (1 hour
+    if(($curtime - $time) <= 5400) {  // 5400 seconds (1.5 hours)
       return false; // Not expired
     }
     else {
@@ -579,7 +579,7 @@ class Evanescent {
             // Timestamp not expired.
             // No redirect.
             echo $this->output_data_atts($email, $gate_name, $gate['pids'], $gate['welcome_pid']); // Add data atts to page
-            echo 'Success: session vars good!';
+            //echo 'Success: session vars good!';
             return;
           }
           else {
