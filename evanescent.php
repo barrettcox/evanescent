@@ -104,7 +104,7 @@ class Evanescent {
     add_action('template_redirect', [$this, 'set_up_redirects']);
    
     // Add form after content welcome pages
-    add_filter('the_content', [$this, 'after_welcome_content']);
+    add_filter('the_content', [$this, 'after_welcome_content'], 9000);
 
     // For session vars
     // Start session on init
@@ -116,6 +116,9 @@ class Evanescent {
     // AJAX functions
     add_action('wp_ajax_evanescent_ajax_check_time', [$this, 'evanescent_ajax_check_time']);
     add_action('wp_ajax_nopriv_evanescent_ajax_check_time', [$this, 'evanescent_ajax_check_time']); // for non-logged in users
+
+    // Shortcodes
+    add_shortcode( 'evanescent_welcome_form', [$this, 'welcome_form_shortcode_init']);
 
     // Plugin URL
     $this->plugin_url = plugin_dir_url( __FILE__ );
@@ -612,7 +615,7 @@ class Evanescent {
       if ($row) {
         // Begin output buffering
         ob_start();
-        require_once 'partials/form-welcome.php';
+        require 'partials/form-welcome.php';
         $after = ob_get_contents();
         ob_end_clean();
         // End output buffering
@@ -620,6 +623,39 @@ class Evanescent {
       }
     }
     return $fullcontent;
+  }
+
+  // Form shortcode
+  public function welcome_form_shortcode_init( $atts ){
+
+    global $post;
+    global $wpdb;
+    //$a = shortcode_atts( array(
+      //    'url'        => '#', // Default is #
+      //   ), $atts );
+
+    $output = '';
+
+    if (isset($_GET['evanescent-pid'])) {
+
+        $sanitized = $this->sanitize($_GET);
+        
+        // Get gates results
+        $query = "SELECT * FROM {$this->table_gates} WHERE welcome_pid = $post->ID";
+        $row   = $wpdb->get_row($query, ARRAY_A);
+
+        if ($row) {
+
+          // Begin output buffering
+          ob_start();
+          require 'partials/form-welcome.php';
+          $form = ob_get_contents();
+          ob_end_clean();
+          // End output buffering
+          $output .= $form;
+        }
+      }
+    return $output;
   }
   
 	/** Singleton instance */
