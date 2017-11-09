@@ -6,7 +6,7 @@
 $this->add_gate_data = $this->sanitize($_POST['evanescent_add_gate_data']);
 
 if (count($this->add_gate_data)) {
-  $data = $this->evanescent_add_new_gate($this->add_gate_data);
+  $data = $this->add_new_gate($this->add_gate_data);
   if ($data) $this->msg = 'New gate added.';
 }
 ?>
@@ -35,7 +35,7 @@ if (count($this->add_gate_data)) {
     <br class="clear">
   </div>
 
-  <div class="postbox postbox--add">
+  <div class="postbox postbox--basic">
     <h3><strong>Add New Gate</strong></h3>
     <form method="post" action="#">
       <?php
@@ -46,4 +46,5 @@ if (count($this->add_gate_data)) {
       ?>
     </form>
   </div>
+
 </div><!-- /.wrap -->

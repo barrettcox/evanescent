@@ -1,5 +1,5 @@
 /*
- * Style for the Evanescent form
+ * Styles for the Evanescent form
  */
 
 .evanescent-welcome-form {
@@ -8,6 +8,7 @@
   background-color: #f9f9f9;
   max-width: 767px;
 }
+
 .evanescent-welcome-form input,
 .evanescent-welcome-form input[type="text"],
 .evanescent-welcome-form input[type="password"],
@@ -28,7 +29,24 @@
   border: none;
   cursor: pointer;
 }
+
 .evanescent-welcome-form input[type="submit"]:hover,
 .evanescent-welcome-form button:hover {
   background-color: #449d44;
+}
+
+/*
+ * Evanescent Timer
+ */
+
+.evanescent-timer {
+  text-align: center;
+  text-transform: uppercase;
+  padding: 30px 15px;
+  color: #999999;
+}
+.evanescent-timer__time {
+  display: inline-block;
+  padding: 0 2px;
+  font-weight: 600;
 }

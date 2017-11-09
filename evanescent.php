@@ -4,7 +4,7 @@
 Plugin Name: Evanescent
 Plugin URI:
 Description: Provides time sensitive access to WordPress pages
-Version: 0.1.0
+Version: 0.1.1
 Author: Barrett Cox
 Author URI:  http://barrettcox.com
 */
@@ -56,6 +56,10 @@ function evanescent_install() {
 
   dbDelta($sql);
   dbDelta($sql_pages);
+
+  // Create options
+  add_option( 'evanescent_settings', ['duration' => 3600], '', 'yes' );
+
 }
 
 /*
@@ -105,6 +109,9 @@ class Evanescent {
    
     // Add form after content welcome pages
     add_filter('the_content', [$this, 'after_welcome_content'], 9000);
+
+    // Add form after content welcome pages
+    add_filter('the_content', [$this, 'after_gate_content'], 9001);
 
     // For session vars
     // Start session on init
@@ -172,18 +179,18 @@ class Evanescent {
    * Enqueue admin scripts and styles
    */
   public function admin_scripts_and_styles() {
-    wp_enqueue_style('evanescent_admin', $this->plugin_url . 'css/evanescent-admin-v0.1.0.css' );
+    wp_enqueue_style('evanescent_admin', $this->plugin_url . 'css/evanescent-admin-v0.1.1.css' );
     wp_enqueue_script('jquery');
-    wp_enqueue_script('evanescent_admin_script', $this->plugin_url . 'js/evanescent-admin-v0.1.0.js', false, null, true );
+    wp_enqueue_script('evanescent_admin_script', $this->plugin_url . 'js/evanescent-admin-v0.1.1.js', false, null, true );
   }
 
   /**
    * Enqueue gate scripts and styles
    */
   public function gate_scripts_and_styles() {
-    wp_enqueue_style('evanescent', $this->plugin_url . 'css/evanescent-v0.1.0.css' );
+    wp_enqueue_style('evanescent', $this->plugin_url . 'css/evanescent-v0.1.1.css' );
     wp_enqueue_script('jquery');
-    wp_enqueue_script('evanescent_ajax_script', $this->plugin_url . 'js/evanescent-ajax-v0.1.0.js', false, null, true );
+    wp_enqueue_script('evanescent_ajax_script', $this->plugin_url . 'js/evanescent-ajax-v0.1.1.js', false, null, true );
     wp_localize_script('evanescent_ajax_script', 'frontendajax', array( 'ajaxurl' => admin_url( 'admin-ajax.php' )));
   }
 
@@ -210,7 +217,8 @@ class Evanescent {
 
       if(!$this->timestamp_expired($row['timestamp'])) {
         // Timestamp not expired.
-        echo 'authorized';
+        $remaining = $this->get_remaining_time($row['timestamp']);
+        echo $remaining;
       }
       else {
         // Timestamp is expired.
@@ -287,7 +295,7 @@ class Evanescent {
     }
     else
     if (101 == $err) {
-      $err_message = 'Your login has expired.';
+      $err_message = 'Your login has expired. Email <strong><a href="mailto:inquiry@ensearch.com?subject=Video Timeout">inquiry@ensearch.com</a></strong> to receive a new invitation.';
     }
     else {
       $err_message = false;
@@ -310,6 +318,9 @@ class Evanescent {
     }
     if (isset($input['last-name'])) {
       $new_input['last-name'] = sanitize_text_field($input['last-name']);
+    }
+    if (isset($input['duration'])) {
+      $new_input['duration'] = sanitize_text_field(intval($input['duration'])); // int values only
     }
     if (isset($input['gate'])) {
       $new_input['gate'] = sanitize_text_field($input['gate']);
@@ -374,6 +385,18 @@ class Evanescent {
     echo '</div>';
   }
 
+  public function duration_cb() {
+    $settings = get_option('evanescent_settings');
+    echo '<div>';
+    echo '<label for="evanescent-duration">Login Duration (seconds)</label>';
+    printf(
+      '<input id="evanescent-duration" name="evanescent_settings[duration]" size="15" value="%s" >',
+      isset($settings['duration']) ? $settings['duration'] : 3600
+      // Default to 3600 seconds (1 hour) if the option does not exist
+    );
+    echo '</div>';
+  }
+
   public function gate_name_cb() {
     echo '<div>';
     echo '<label for="evanescent-gate-name">Gate Name</label>';
@@ -404,7 +427,11 @@ class Evanescent {
     echo '</div>';
   }
 
-  public function evanescent_add_new($input) {
+  public function update_settings($input) {
+    update_option('evanescent_settings', [ 'duration' => $input['duration'] ]);
+  }
+
+  public function add_new($input) {
 
     global $wpdb;
     //$d    = date('0000-00-00 00:00:00');
@@ -429,7 +456,7 @@ class Evanescent {
     return $data;
   }
 
-  public function evanescent_add_new_gate($input) {
+  public function add_new_gate($input) {
 
     global $wpdb;
 
@@ -449,12 +476,24 @@ class Evanescent {
   public function timestamp_expired($timestamp) {
     $time = strtotime($timestamp);
     $curtime = time();
-    if(($curtime - $time) <= 5400) {  // 5400 seconds (1.5 hours)
+    $settings = get_option('evanescent_settings');
+    $duration = $settings ? $settings['duration'] : 3600; // Default to 3600 seconds (1 hour) if the option does not exist
+    if(($curtime - $time) <= $duration) {
       return false; // Not expired
     }
     else {
       return true; // Expired
     }
+  }
+
+  public function get_remaining_time($timestamp) {
+    $time = strtotime($timestamp);
+    $curtime = time();
+    $settings = get_option('evanescent_settings');
+    $duration = $settings ? $settings['duration'] : 3600; // Default to 3600 seconds (1 hour) if the option does not exist
+    $elapsed = $curtime - $time;
+    $remaining = $duration - $elapsed;
+    return $remaining;
   }
 
   public function output_data_atts($email, $gate, $pids, $welcome_pid) {
@@ -551,7 +590,7 @@ class Evanescent {
             }
             else {
               // Previously logged in and viewed, so let's check the timestamp
-              if(!$this->timestamp_expired($row['timestamp'])) {  // 3600 seconds (1 hour
+              if(!$this->timestamp_expired($row['timestamp'])) { 
                 // Timestamp not expired. User has permission.
                 // No redirect.
                 //echo 'Success';
@@ -625,6 +664,23 @@ class Evanescent {
     return $fullcontent;
   }
 
+  public function after_gate_content($content) {
+    global $post;
+    global $wpdb;
+
+    $fullcontent = $content;
+
+    // Get gates results
+    $query = "SELECT * FROM {$this->table_gates} WHERE pids = $post->ID LIMIT 1";
+    $row   = $wpdb->get_row($query, ARRAY_A);
+
+    if ($row) {
+      $fullcontent .= '<div id="evanescent-timer" class="evanescent-timer" data-evanescent-remaining>Time Remaining: <span class="evanescent-timer__time"></span></div>';
+    }
+
+    return $fullcontent;
+  }
+
   // Form shortcode
   public function welcome_form_shortcode_init( $atts ){
 
@@ -638,23 +694,23 @@ class Evanescent {
 
     if (isset($_GET['evanescent-pid'])) {
 
-        $sanitized = $this->sanitize($_GET);
-        
-        // Get gates results
-        $query = "SELECT * FROM {$this->table_gates} WHERE welcome_pid = $post->ID";
-        $row   = $wpdb->get_row($query, ARRAY_A);
+      $sanitized = $this->sanitize($_GET);
+      
+      // Get gates results
+      $query = "SELECT * FROM {$this->table_gates} WHERE welcome_pid = $post->ID";
+      $row   = $wpdb->get_row($query, ARRAY_A);
 
-        if ($row) {
+      if ($row) {
 
-          // Begin output buffering
-          ob_start();
-          require 'partials/form-welcome.php';
-          $form = ob_get_contents();
-          ob_end_clean();
-          // End output buffering
-          $output .= $form;
-        }
+        // Begin output buffering
+        ob_start();
+        require 'partials/form-welcome.php';
+        $form = ob_get_contents();
+        ob_end_clean();
+        // End output buffering
+        $output .= $form;
       }
+    }
     return $output;
   }
   

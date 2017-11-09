@@ -2,27 +2,26 @@
  * Style for the Evanescent admin pages
  */
 
-.postbox--add {
+.postbox--basic {
   margin-top: 15px;
   padding: 0 15px;
   background-color: #f9f9f9;
 }
-.postbox--add h3 {
+.postbox--basic h3 {
   margin-bottom: 15px;
 }
-.postbox--add label {
+.postbox--basic label {
   display: block;
-  padding: 0.5em 0;
+  padding: 0.5em 2px;
 }
-.postbox--add input[type="text"],
-.postbox--add input[type="password"],
-.postbox--add input[type="email"] {
+.postbox--basic input[type="text"],
+.postbox--basic input[type="password"],
+.postbox--basic input[type="email"] {
   margin-bottom: 15px;
 }
 .evanescent-email-row {
   display: none;
 }
-
 .evanescent-email-row textarea {
   width: 100%;
   height: 200px;
