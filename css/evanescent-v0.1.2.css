@@ -4,9 +4,9 @@
 
 .evanescent-welcome-form {
   margin-top: 15px;
-  padding: 15px;
+  padding: 15px 30px 15px 15px;
   background-color: #f9f9f9;
-  max-width: 767px;
+  max-width: 680px;
 }
 
 .evanescent-welcome-form input,

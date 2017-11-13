@@ -21,8 +21,11 @@
     <div>
     <input id="evanescent-pass" name="evanescent_login[pass]" size="25" value="" type="password">
     </div>
-    <p>You will have one-time access for just 24 hours after you begin watching the video.
-    Do you want to begin watching the video now?</p>
+    <ul>
+      <li>The duration of this video is one hour and 20 minutes</li>
+      <li>Upon clicking the “Yes” button below you will have access to this video for up to <strong>seven hours</strong></li>
+    </ul>
+    <p>Thanks and may you have a blessed day.</p>
     <input type="submit" value="Yes">
   </form>
   <?php

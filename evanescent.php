@@ -4,7 +4,7 @@
 Plugin Name: Evanescent
 Plugin URI:
 Description: Provides time sensitive access to WordPress pages
-Version: 0.1.1
+Version: 0.1.2
 Author: Barrett Cox
 Author URI:  http://barrettcox.com
 */
@@ -179,18 +179,18 @@ class Evanescent {
    * Enqueue admin scripts and styles
    */
   public function admin_scripts_and_styles() {
-    wp_enqueue_style('evanescent_admin', $this->plugin_url . 'css/evanescent-admin-v0.1.1.css' );
+    wp_enqueue_style('evanescent_admin', $this->plugin_url . 'css/evanescent-admin-v0.1.2.css' );
     wp_enqueue_script('jquery');
-    wp_enqueue_script('evanescent_admin_script', $this->plugin_url . 'js/evanescent-admin-v0.1.1.js', false, null, true );
+    wp_enqueue_script('evanescent_admin_script', $this->plugin_url . 'js/evanescent-admin-v0.1.2.js', false, null, true );
   }
 
   /**
    * Enqueue gate scripts and styles
    */
   public function gate_scripts_and_styles() {
-    wp_enqueue_style('evanescent', $this->plugin_url . 'css/evanescent-v0.1.1.css' );
+    wp_enqueue_style('evanescent', $this->plugin_url . 'css/evanescent-v0.1.2.css' );
     wp_enqueue_script('jquery');
-    wp_enqueue_script('evanescent_ajax_script', $this->plugin_url . 'js/evanescent-ajax-v0.1.1.js', false, null, true );
+    wp_enqueue_script('evanescent_ajax_script', $this->plugin_url . 'js/evanescent-ajax-v0.1.2.js', false, null, true );
     wp_localize_script('evanescent_ajax_script', 'frontendajax', array( 'ajaxurl' => admin_url( 'admin-ajax.php' )));
   }
 
