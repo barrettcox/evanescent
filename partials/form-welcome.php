@@ -23,7 +23,8 @@
     </div>
     <ul>
       <li>The duration of this video is one hour and 20 minutes</li>
-      <li>Upon clicking the “Yes” button below you will have access to this video for up to <strong>seven hours</strong></li>
+      <li>Upon clicking the “Yes” button below you will have access to his video for up to <strong>7 hours</strong></li>
+      <li>Although recommended to do so, you do not need to watch the video in one sitting. You may start and stop the presentation as many times as you wish or need to during those seven hours.</li>
     </ul>
     <p>Thanks and may you have a blessed day.</p>
     <input type="submit" value="Yes">
