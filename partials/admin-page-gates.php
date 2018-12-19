@@ -3,7 +3,7 @@
  * Gates admin page
  */
 
-$this->add_gate_data = $this->sanitize($_POST['evanescent_add_gate_data']);
+$this->add_gate_data = $this->sanitize($_POST['temporal_add_gate_data']);
 
 if (count($this->add_gate_data)) {
   $data = $this->add_new_gate($this->add_gate_data);
@@ -18,7 +18,7 @@ if (count($this->add_gate_data)) {
   if ($this->msg != '') require_once 'notice-msg.php';
   ?>
 
-  <h1>Evanescent</h1>
+  <h1>Temporal</h1>
   <h2>Gates</h2>
   <div id="poststuff">
     <div id="post-body" class="metabox-holder">
@@ -42,6 +42,8 @@ if (count($this->add_gate_data)) {
       $this->gate_name_cb();
       $this->gate_pids_cb();
       $this->gate_welcome_pid_cb();
+      $this->gate_content_after_fields_cb();
+      $this->gate_content_expired_cb();
       submit_button('Add');
       ?>
     </form>

@@ -1,5 +1,5 @@
 /*
- * Style for the Evanescent admin pages
+ * Style for the Temporal admin pages
  */
 
 .postbox--basic {
@@ -19,10 +19,10 @@
 .postbox--basic input[type="email"] {
   margin-bottom: 15px;
 }
-.evanescent-email-row {
+.temporal-email-row {
   display: none;
 }
-.evanescent-email-row textarea {
+.temporal-email-row textarea {
   width: 100%;
   height: 200px;
 }

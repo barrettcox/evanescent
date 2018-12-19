@@ -3,8 +3,8 @@
  * Invitees admin page
  */
 
-$this->add_data = $this->sanitize($_POST['evanescent_add_data']);
-$this->settings_data = $this->sanitize($_POST['evanescent_settings']);
+$this->add_data = $this->sanitize($_POST['temporal_add_data']);
+$this->settings_data = $this->sanitize($_POST['temporal_settings']);
 
 if (count($this->add_data)) {
   $data = $this->add_new($this->add_data);
@@ -24,7 +24,7 @@ if (count($this->settings_data)) {
   if ($this->msg != '') require_once 'notice-msg.php';
   ?>
 
-  <h1>Evanescent</h1>
+  <h1>Temporal</h1>
   <h2>Invitees</h2>
   <div id="poststuff">
     <div id="post-body" class="metabox-holder">
@@ -67,7 +67,7 @@ if (count($this->settings_data)) {
     </form>
 
     <?php else : ?>
-    <p>You must add at least one Gate before adding an invitee.</p>
+    <p>You must add one or more <a href="<?php echo get_admin_url(); ?>/admin.php?page=temporal_gates">Gates</a> before adding an invitee.</p>
     <?php endif; ?>
   </div>
 
@@ -76,6 +76,7 @@ if (count($this->settings_data)) {
     <form method="post" action="#">
       <?php
       $this->duration_cb();
+      $this->duration_secondary_cb();
       submit_button('Save');
       ?>
     </form>

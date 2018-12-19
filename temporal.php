@@ -1,10 +1,10 @@
 <?php
 
 /*
-Plugin Name: Evanescent
+Plugin Name: Temporal
 Plugin URI:
 Description: Provides time sensitive access to WordPress pages
-Version: 0.1.2
+Version: 0.1.3
 Author: Barrett Cox
 Author URI:  http://barrettcox.com
 */
@@ -21,7 +21,7 @@ require_once 'inc/class-invitees-list.php';
 require_once 'inc/class-gates-list.php';
 
 
-function evanescent_install() {
+function temporal_install() {
 
   global $wpdb;
 
@@ -39,6 +39,7 @@ function evanescent_install() {
          `pass` varchar(8) NOT NULL DEFAULT '',
          `gate` varchar(50) NOT NULL DEFAULT '',
          `viewed` tinyint(1) NOT NULL DEFAULT 0,
+         `init_secondary` tinyint(1) NOT NULL DEFAULT 0,
          `sent` tinyint(1) NOT NULL DEFAULT 0,
          `expired` tinyint(1) NOT NULL DEFAULT 0,
          PRIMARY KEY  (`id`)
@@ -49,6 +50,8 @@ function evanescent_install() {
                `name` varchar(50) NOT NULL DEFAULT '',
                `pids` varchar(255) NOT NULL DEFAULT '',
                `welcome_pid` int NOT NULL DEFAULT 0,
+               `content_after_fields` varchar(510) NOT NULL DEFAULT '',
+               `content_expired` varchar(510) NOT NULL DEFAULT '',
                PRIMARY KEY  (`id`)
                ) $charset_collate;";
 
@@ -58,12 +61,13 @@ function evanescent_install() {
   dbDelta($sql_pages);
 
   // Create options
-  add_option( 'evanescent_settings', ['duration' => 3600], '', 'yes' );
+  add_option( 'temporal_settings', ['duration' => 3600,
+                                      'duration-secondary' => 0 ], '', 'yes' );
 
 }
 
 /*
-function evanescent_uninstall() {
+function temporal_uninstall() {
 
   global $wpdb;
 
@@ -77,12 +81,12 @@ function evanescent_uninstall() {
 }
 */
 
-register_activation_hook(__FILE__, 'evanescent_install');
+register_activation_hook(__FILE__, 'temporal_install');
 
-register_deactivation_hook(__FILE__, 'evanescent_uninstall');
+register_deactivation_hook(__FILE__, 'temporal_uninstall');
 
 
-class Evanescent {
+class Temporal {
 
 	// class instance
 	static $instance;
@@ -121,11 +125,13 @@ class Evanescent {
     add_action('wp_login', [$this, 'end_session']);
 
     // AJAX functions
-    add_action('wp_ajax_evanescent_ajax_check_time', [$this, 'evanescent_ajax_check_time']);
-    add_action('wp_ajax_nopriv_evanescent_ajax_check_time', [$this, 'evanescent_ajax_check_time']); // for non-logged in users
+    add_action('wp_ajax_temporal_ajax_check_time', [$this, 'temporal_ajax_check_time']);
+    add_action('wp_ajax_nopriv_temporal_ajax_check_time', [$this, 'temporal_ajax_check_time']); // for non-logged in users
+    add_action('wp_ajax_temporal_ajax_init_secondary', [$this, 'temporal_ajax_init_secondary']);
+    add_action('wp_ajax_nopriv_temporal_ajax_init_secondary', [$this, 'temporal_ajax_init_secondary']); // for non-logged in users
 
     // Shortcodes
-    add_shortcode( 'evanescent_welcome_form', [$this, 'welcome_form_shortcode_init']);
+    add_shortcode( 'temporal_welcome_form', [$this, 'welcome_form_shortcode_init']);
 
     // Plugin URL
     $this->plugin_url = plugin_dir_url( __FILE__ );
@@ -143,19 +149,19 @@ class Evanescent {
 
     // Main admin menu heading (links to Invitees submenu page)
 		add_menu_page(
-			'Evanescent',
-			'Evanescent',
+			'Temporal',
+			'Temporal',
 			'manage_options',
-			'evanescent'
+			'temporal'
 		);
 
     // Invitees admin page
     $hook = add_submenu_page(
-      'evanescent',
+      'temporal',
       'Invitees',
       'Invitees',
       'manage_options',
-      'evanescent', // Same as parent menu slug so both point to same place
+      'temporal', // Same as parent menu slug so both point to same place
       [ $this, 'invitees_settings_page' ]
     );
     add_action( 'load-' . $hook, [ $this, 'screen_option' ] );
@@ -163,11 +169,11 @@ class Evanescent {
 
     // Gates admin page
     $hook_gates = add_submenu_page(
-      'evanescent',
+      'temporal',
       'Gates',
       'Gates',
       'manage_options',
-      'evanescent_gates',
+      'temporal_gates',
       [ $this, 'gates_settings_page' ]
     );
     add_action( 'load-' . $hook_gates, [ $this, 'screen_option_gates' ] );
@@ -179,23 +185,23 @@ class Evanescent {
    * Enqueue admin scripts and styles
    */
   public function admin_scripts_and_styles() {
-    wp_enqueue_style('evanescent_admin', $this->plugin_url . 'css/evanescent-admin-v0.1.2.css' );
+    wp_enqueue_style('temporal_admin', $this->plugin_url . 'css/temporal-admin-v0.1.3.css' );
     wp_enqueue_script('jquery');
-    wp_enqueue_script('evanescent_admin_script', $this->plugin_url . 'js/evanescent-admin-v0.1.2.js', false, null, true );
+    wp_enqueue_script('temporal_admin_script', $this->plugin_url . 'js/temporal-admin-v0.1.3.js', false, null, true );
   }
 
   /**
    * Enqueue gate scripts and styles
    */
   public function gate_scripts_and_styles() {
-    wp_enqueue_style('evanescent', $this->plugin_url . 'css/evanescent-v0.1.2.css' );
+    wp_enqueue_style('temporal', $this->plugin_url . 'css/temporal-v0.1.3.css' );
     wp_enqueue_script('jquery');
-    wp_enqueue_script('evanescent_ajax_script', $this->plugin_url . 'js/evanescent-ajax-v0.1.2.js', false, null, true );
-    wp_localize_script('evanescent_ajax_script', 'frontendajax', array( 'ajaxurl' => admin_url( 'admin-ajax.php' )));
+    wp_enqueue_script('temporal_ajax_script', $this->plugin_url . 'js/temporal-ajax-v0.1.3.js', false, null, true );
+    wp_localize_script('temporal_ajax_script', 'frontendajax', array( 'ajaxurl' => admin_url( 'admin-ajax.php' )));
   }
 
-  // Handles AJAX request for Find Food results
-  public function evanescent_ajax_check_time() {
+  // Handles AJAX request for timestamp comparison
+  public function temporal_ajax_check_time() {
 
     global $wpdb;
 
@@ -214,15 +220,56 @@ class Evanescent {
       // Query table for email
       $query = "SELECT * FROM {$this->table}  WHERE email = '$email' and gate = '$gate'";
       $row = $wpdb->get_row($query, ARRAY_A);
+      $settings = get_option('temporal_settings');
 
-      if(!$this->timestamp_expired($row['timestamp'])) {
+      // If secondary has been initiated, use the secondary duration
+      $duration = boolval($row['init_secondary']) ? intval($settings['duration-secondary']) : intval($settings['duration']);
+
+      if(!$this->timestamp_expired($row['timestamp'], $duration)) {
         // Timestamp not expired.
-        $remaining = $this->get_remaining_time($row['timestamp']);
-        echo $remaining;
+        $remaining = $this->get_remaining_time($row['timestamp'], $duration);
+        $result = [ 'remaining' => $remaining, 'secondary' => intval($row['init_secondary']) ];
+        echo json_encode($result);
       }
       else {
         // Timestamp is expired.
         echo 'expired';
+      }
+    }
+    // Always die in functions echoing ajax content
+    die();
+  }
+
+  // Handles AJAX request for starting secondary timer
+  public function temporal_ajax_init_secondary() {
+
+    global $wpdb;
+
+    // The $_REQUEST contains all the data sent via ajax
+    if ( isset($_REQUEST) ) {
+
+      $sanitized = $this->sanitize($_REQUEST);
+      $email = $sanitized['email'];
+      $gate = $sanitized['gate'];
+      $dt = date('Y-m-d H:i:s'); // Current date/time
+
+      $query = "SELECT * FROM {$this->table} WHERE email = '$email' and gate = '$gate'";
+      $row   = $wpdb->get_row($query, ARRAY_A);
+
+      if (boolval($row['init_secondary'])) {
+        echo 'Secondary already initiated';
+      }
+      else {
+        // Update secondary value and timestamp in db
+        $query = "UPDATE {$this->table}  SET init_secondary = 1, timestamp = '$dt' WHERE email = '$email' and gate = '$gate'";
+        $result = $wpdb->query($query);
+
+        if($result) {
+          echo 'success';
+        }
+        else {
+          echo 'There was a problem updating the database.';
+        }
       }
     }
     // Always die in functions echoing ajax content
@@ -289,13 +336,17 @@ class Evanescent {
     session_destroy();
   }
 
-  public function evanescent_errors($err) {
+  public function temporal_errors($err, $err_overrides=false) {
+    if (!empty($err_overrides[$err])) {
+      $err_message = $err_overrides[$err];
+    }
+    else
     if (100 == $err) {
       $err_message = 'Your email or password is incorrect.';
     }
     else
     if (101 == $err) {
-      $err_message = 'Your login has expired. Email <strong><a href="mailto:inquiry@ensearch.com?subject=Video Timeout">inquiry@ensearch.com</a></strong> to receive a new invitation.';
+      $err_message = 'Your login has expired.';
     }
     else {
       $err_message = false;
@@ -322,11 +373,20 @@ class Evanescent {
     if (isset($input['duration'])) {
       $new_input['duration'] = sanitize_text_field(intval($input['duration'])); // int values only
     }
+    if (isset($input['duration-secondary'])) {
+      $new_input['duration-secondary'] = sanitize_text_field(intval($input['duration-secondary'])); // int values only
+    }
     if (isset($input['gate'])) {
       $new_input['gate'] = sanitize_text_field($input['gate']);
     }
-    if (isset($input['evanescent-pid'])) {
-      $new_input['evanescent-pid'] = sanitize_text_field(intval($input['evanescent-pid'])); // int values only
+    if (isset($input['content-after-fields'])) {
+      $new_input['content-after-fields'] = wp_kses_post($input['content-after-fields']);
+    }
+    if (isset($input['content-expired'])) {
+      $new_input['content-expired'] = wp_kses_post($input['content-expired']);
+    }
+    if (isset($input['temporal-pid'])) {
+      $new_input['temporal-pid'] = sanitize_text_field(intval($input['temporal-pid'])); // int values only
     }
     if (isset($input['pids'])) {
       $new_input['pids'] = sanitize_text_field($input['pids']);
@@ -334,17 +394,17 @@ class Evanescent {
     if (isset($input['welcome-pid'])) {
       $new_input['welcome-pid'] = sanitize_text_field(intval($input['welcome-pid']));
     }
-    if (isset($input['evanescent-err'])) {
-      $new_input['evanescent-err'] = sanitize_text_field(intval($input['evanescent-err'])); // int values only
+    if (isset($input['temporal-err'])) {
+      $new_input['temporal-err'] = sanitize_text_field(intval($input['temporal-err'])); // int values only
     }
     return $new_input;
   }
 
   public function email_cb() {
     echo '<div>';
-    echo '<label for="evanescent-email">Email</label>';
+    echo '<label for="temporal-email">Email</label>';
     printf(
-      '<input id="evanescent-email" name="evanescent_add_data[email]" size="50" value="%s" >',
+      '<input id="temporal-email" name="temporal_add_data[email]" size="50" value="%s" >',
       isset($this->add_data['email']) ? esc_attr($this->add_data['email']) : ''
     );
     echo '</div>';
@@ -352,9 +412,9 @@ class Evanescent {
 
   public function first_name_cb() {
     echo '<div>';
-    echo '<label for="evanescent-first-name">First Name</label>';
+    echo '<label for="temporal-first-name">First Name</label>';
     printf(
-      '<input id="evanescent-first-name" name="evanescent_add_data[first-name]" size="50" value="%s" >',
+      '<input id="temporal-first-name" name="temporal_add_data[first-name]" size="50" value="%s" >',
       isset($this->add_data['first-name']) ? esc_attr($this->add_data['first-name']) : ''
     );
     echo '</div>';
@@ -362,9 +422,9 @@ class Evanescent {
 
   public function last_name_cb() {
     echo '<div>';
-    echo '<label for="evanescent-last-name">Last Name</label>';
+    echo '<label for="temporal-last-name">Last Name</label>';
     printf(
-      '<input id="evanescent-last-name" name="evanescent_add_data[last-name]" size="50" value="%s" >',
+      '<input id="temporal-last-name" name="temporal_add_data[last-name]" size="50" value="%s" >',
       isset($this->add_data['last-name']) ? esc_attr($this->add_data['last-name']) : ''
     );
     echo '</div>';
@@ -372,9 +432,9 @@ class Evanescent {
   
   public function email_gate_cb() {
     echo '<div>';
-    echo '<label for="evanescent-gate-select">Gate</label>';
+    echo '<label for="temporal-gate-select">Gate</label>';
     printf(
-      '<select id="evanescent-gate-select" name="evanescent_add_data[gate]" value="%s" >',
+      '<select id="temporal-gate-select" name="temporal_add_data[gate]" value="%s" >',
       isset($this->add_data['gate']) ? esc_attr($this->add_data['gate']) : ''
     );
     foreach ($this->gate_results as $gate) {
@@ -386,32 +446,44 @@ class Evanescent {
   }
 
   public function duration_cb() {
-    $settings = get_option('evanescent_settings');
+    $settings = get_option('temporal_settings');
     echo '<div>';
-    echo '<label for="evanescent-duration">Login Duration (seconds)</label>';
+    echo '<label for="temporal-duration">Login Duration (seconds)</label>';
     printf(
-      '<input id="evanescent-duration" name="evanescent_settings[duration]" size="15" value="%s" >',
+      '<input id="temporal-duration" name="temporal_settings[duration]" size="15" value="%s" >',
       isset($settings['duration']) ? $settings['duration'] : 3600
       // Default to 3600 seconds (1 hour) if the option does not exist
     );
     echo '</div>';
   }
 
+  public function duration_secondary_cb() {
+    $settings = get_option('temporal_settings');
+    echo '<div>';
+    echo '<label for="temporal-duration-secondary">Secondary Duration (seconds)</label>';
+    printf(
+      '<input id="temporal-duration-secondary" name="temporal_settings[duration-secondary]" size="15" value="%s" >',
+      isset($settings['duration-secondary']) ? $settings['duration-secondary'] : 0 // Default to 0 seconds if the option does not exist
+    );
+    echo '</div>';
+  }
+
   public function gate_name_cb() {
     echo '<div>';
-    echo '<label for="evanescent-gate-name">Gate Name</label>';
+    echo '<label for="temporal-gate-name">Gate Name</label>';
     printf(
-      '<input id="evanescent-gate-name" name="evanescent_add_gate_data[gate]" size="50" value="%s" >',
+      '<input id="temporal-gate-name" name="temporal_add_gate_data[gate]" size="50" value="%s" >',
       isset($this->add_gate_data['gate']) ? esc_attr($this->add_gate_data['gate']) : ''
     );
     echo '</div>';
   }
 
+
   public function gate_pids_cb() {
     echo '<div>';
-    echo '<label for="evanescent-gate-pids">Gated Page/Post IDs</label>';
+    echo '<label for="temporal-gate-pids">Gated Page/Post IDs</label>';
     printf(
-      '<input id="evanescent-gate-pids" name="evanescent_add_gate_data[pids]" size="50" value="%s" >',
+      '<input id="temporal-gate-pids" name="temporal_add_gate_data[pids]" size="50" value="%s" >',
       isset($this->add_gate_data['pids']) ? esc_attr($this->add_gate_data['pids']) : ''
     );
     echo '</div>';
@@ -419,16 +491,37 @@ class Evanescent {
 
   public function gate_welcome_pid_cb() {
     echo '<div>';
-    echo '<label for="evanescent-welcome-pid">Welcome Page ID</label>';
+    echo '<label for="temporal-welcome-pid">Welcome Page ID</label>';
     printf(
-      '<input id="evanescent-welcome-pid" name="evanescent_add_gate_data[welcome-pid]" size="50" value="%s" >',
+      '<input id="temporal-welcome-pid" name="temporal_add_gate_data[welcome-pid]" size="50" value="%s" >',
       isset($this->add_gate_data['welcome-pid']) ? esc_attr($this->add_gate_data['welcome-pid']) : ''
     );
     echo '</div>';
   }
 
+  public function gate_content_after_fields_cb() {
+    echo '<div>';
+    echo '<label for="temporal-content-after-fields">Message to be displayed after welcome form fields</label>';
+    printf(
+      '<textarea id="temporal-content-after-fields" name="temporal_add_gate_data[content-after-fields]">%s</textarea>',
+      isset($this->add_gate_data['content-after-fields']) ? $this->add_gate_data['content-after-fields'] : ''
+    );
+    echo '</div>';
+  }
+
+  public function gate_content_expired_cb() {
+    echo '<div>';
+    echo '<label for="temporal-content-expired">Expiration message</label>';
+    printf(
+      '<textarea id="temporal-content-expired" name="temporal_add_gate_data[content-expired]">%s</textarea>',
+      isset($this->add_gate_data['content-expired']) ? $this->add_gate_data['content-expired'] : ''
+    );
+    echo '</div>';
+  }
+
   public function update_settings($input) {
-    update_option('evanescent_settings', [ 'duration' => $input['duration'] ]);
+    update_option('temporal_settings', [ 'duration' => $input['duration'],
+                                           'duration-secondary' => $input['duration-secondary'] ]);
   }
 
   public function add_new($input) {
@@ -463,9 +556,11 @@ class Evanescent {
     $data = $wpdb->insert(
       EV_TABLE_GATES_NAME,
       [
-        'name'        => $input['gate'],
-        'pids'        => $input['pids'],
-        'welcome_pid' => $input['welcome-pid']
+        'name'                 => $input['gate'],
+        'pids'                 => $input['pids'],
+        'welcome_pid'          => $input['welcome-pid'],
+        'content_after_fields' => $input['content-after-fields'],
+        'content_expired'      => $input['content-expired']
       ],
       ['%s', '%s']
     );
@@ -473,11 +568,9 @@ class Evanescent {
     return $data;
   }
 
-  public function timestamp_expired($timestamp) {
+  public function timestamp_expired($timestamp, $duration) {
     $time = strtotime($timestamp);
     $curtime = time();
-    $settings = get_option('evanescent_settings');
-    $duration = $settings ? $settings['duration'] : 3600; // Default to 3600 seconds (1 hour) if the option does not exist
     if(($curtime - $time) <= $duration) {
       return false; // Not expired
     }
@@ -486,11 +579,9 @@ class Evanescent {
     }
   }
 
-  public function get_remaining_time($timestamp) {
+  public function get_remaining_time($timestamp, $duration) {
     $time = strtotime($timestamp);
     $curtime = time();
-    $settings = get_option('evanescent_settings');
-    $duration = $settings ? $settings['duration'] : 3600; // Default to 3600 seconds (1 hour) if the option does not exist
     $elapsed = $curtime - $time;
     $remaining = $duration - $elapsed;
     return $remaining;
@@ -498,25 +589,25 @@ class Evanescent {
 
   public function output_data_atts($email, $gate, $pids, $welcome_pid) {
     $welcome_url = get_the_permalink($welcome_pid);
-    return '<div id="evanescent-invitee" style="visibility:hidden!important;height:0!important;" data-evanescent-email="' . $email . '" data-evanescent-gate="' . $gate . '" data-evanescent-url="' . $welcome_url . '?evanescent-pid=' . $pids . '&evanescent-err=101"></div>';
+    return '<div id="temporal-invitee" style="display:none;" data-temporal-email="' . $email . '" data-temporal-gate="' . $gate . '" data-temporal-url="' . $welcome_url . '?temporal-pid=' . $pids . '&temporal-err=101"></div>';
   }
 
   public function create_session_vars($email) {
-    $_SESSION['evanescent_auth'] = true;
-    $_SESSION['evanescent_email'] = $email;
+    $_SESSION['temporal_auth'] = true;
+    $_SESSION['temporal_email'] = $email;
     return;
   }
 
   public function destroy_session_vars() {
-    unset($_SESSION['evanescent_auth']);
-    unset($_SESSION['evanescent_email']);
+    unset($_SESSION['temporal_auth']);
+    unset($_SESSION['temporal_email']);
     return;
   }
 
   public function redirect($welcome_pid, $pid, $err = false) {
-    $url  = get_the_permalink($welcome_pid) . '?evanescent-pid=' . $pid;
+    $url  = get_the_permalink($welcome_pid) . '?temporal-pid=' . $pid;
     //Add any error codes to the URL
-    $url .= $err ? '&evanescent-err=' . intval($err) : ''; 
+    $url .= $err ? '&temporal-err=' . intval($err) : ''; 
     // Redirect
     if (isset($welcome_pid)) {
       wp_redirect($url);
@@ -533,7 +624,7 @@ class Evanescent {
     global $wpdb;
 
     $query = "UPDATE {$this->table}  SET expired = 1 WHERE email = '$email' and gate = '$gate'";
-    $row   = $wpdb->get_row($query, ARRAY_A);
+    $result = $wpdb->query($query);
     $this->destroy_session_vars();
     // Redirect and return.
     $this->redirect($welcome_pid, $post->ID, 101); // 101 (expired)
@@ -556,9 +647,9 @@ class Evanescent {
     foreach ($results as $gate) :
       if ($post->ID == $gate['pids']) :
         // Gate found for this post
-        if (isset($_POST['evanescent_login'])) :
+        if (isset($_POST['temporal_login'])) :
           // Login data exists
-          $sanitized = $this->sanitize($_POST['evanescent_login']);
+          $sanitized = $this->sanitize($_POST['temporal_login']);
           $email     = isset($sanitized['email']) ? $sanitized['email'] : '';
           $pass      = isset($sanitized['pass']) ? $sanitized['pass'] : '';
           
@@ -580,7 +671,7 @@ class Evanescent {
             if (!$viewed) {
               // Not previously viewed, so mark the video as 'viewed' and update the timestamp
               $query = "UPDATE {$this->table}  SET viewed = 1, timestamp = '$dt' WHERE email = '$email' and gate = '" . $row['gate'] . "'";
-              $row   = $wpdb->get_row($query, ARRAY_A);
+              $result = $wpdb->query($query);
               // User has permission.
               // No redirect.
               //echo 'Success';
@@ -590,7 +681,9 @@ class Evanescent {
             }
             else {
               // Previously logged in and viewed, so let's check the timestamp
-              if(!$this->timestamp_expired($row['timestamp'])) { 
+              $settings = get_option('temporal_settings');
+              $duration = $settings ? $settings['duration'] : 3600; // Default to 3600 seconds (1 hour) if the option does not exist
+              if(!$this->timestamp_expired($row['timestamp'], $duration)) { 
                 // Timestamp not expired. User has permission.
                 // No redirect.
                 //echo 'Success';
@@ -606,15 +699,17 @@ class Evanescent {
               }
             }
           endif; // Login matches
-        elseif(isset($_SESSION['evanescent_auth']) && $_SESSION['evanescent_auth'] && isset($_SESSION['evanescent_email'])) :
+        elseif(isset($_SESSION['temporal_auth']) && $_SESSION['temporal_auth'] && isset($_SESSION['temporal_email'])) :
           // No login data, but session vars already exists.
           // Query the db for timestamp
-          $email     = $_SESSION['evanescent_email'];
+          $email     = $_SESSION['temporal_email'];
           $gate_name = $gate['name'];
           $query = "SELECT * FROM {$this->table}  WHERE email = '$email' and gate = '$gate_name'";
           $row = $wpdb->get_row($query, ARRAY_A);
 
-          if(!$this->timestamp_expired($row['timestamp'])) {
+          $settings = get_option('temporal_settings');
+          $duration = $settings ? $settings['duration'] : 3600; // Default to 3600 seconds (1 hour) if the option does not exist
+          if(!$this->timestamp_expired($row['timestamp'], $duration)) {
             // Timestamp not expired.
             // No redirect.
             echo $this->output_data_atts($email, $gate_name, $gate['pids'], $gate['welcome_pid']); // Add data atts to page
@@ -643,7 +738,7 @@ class Evanescent {
 
     $fullcontent = $content;
 
-    if (isset($_GET['evanescent-pid'])) {
+    if (isset($_GET['temporal-pid'])) {
 
       $sanitized = $this->sanitize($_GET);
       
@@ -675,7 +770,7 @@ class Evanescent {
     $row   = $wpdb->get_row($query, ARRAY_A);
 
     if ($row) {
-      $fullcontent .= '<div id="evanescent-timer" class="evanescent-timer" data-evanescent-remaining>Time Remaining: <span class="evanescent-timer__time"></span></div>';
+      $fullcontent .= '<div id="temporal-timer" class="temporal-timer" data-temporal-remaining style="display:none;">Time Remaining: <span class="temporal-timer__time"></span></div>';
     }
 
     return $fullcontent;
@@ -692,7 +787,7 @@ class Evanescent {
 
     $output = '';
 
-    if (isset($_GET['evanescent-pid'])) {
+    if (isset($_GET['temporal-pid'])) {
 
       $sanitized = $this->sanitize($_GET);
       
@@ -727,5 +822,5 @@ class Evanescent {
 
 
 add_action( 'plugins_loaded', function () {
-	Evanescent::get_instance();
+	Temporal::get_instance();
 } );

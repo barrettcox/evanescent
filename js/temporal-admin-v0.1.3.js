@@ -7,11 +7,11 @@
     // DOM ready, take it away
     console.log('Admin JS Loaded');
 
-    var showEmailButton = $('.evanescent-admin__show');
+    var showEmailButton = $('.temporal-admin__show');
 
     if (showEmailButton.length) {
       showEmailButton.click(function(){
-        var emailRow = $(this).closest('tr').next('.evanescent-email-row');
+        var emailRow = $(this).closest('tr').next('.temporal-email-row');
         if (emailRow.length) {
           if (emailRow.is(':visible')) {
             emailRow.hide();

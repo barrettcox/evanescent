@@ -12,8 +12,8 @@ class Invitees_List extends WP_List_Table {
 	public function __construct() {
 
 		parent::__construct( [
-			'singular' => __( 'Invitee', 'evanescent' ), //singular name of the listed records
-			'plural'   => __( 'Invitees', 'evanescent' ), //plural name of the listed records
+			'singular' => __( 'Invitee', 'temporal' ), //singular name of the listed records
+			'plural'   => __( 'Invitees', 'temporal' ), //plural name of the listed records
 			'ajax'     => false //does this table support ajax?
 		] );
 
@@ -31,7 +31,7 @@ class Invitees_List extends WP_List_Table {
 
 		global $wpdb;
 
-		$sql = "SELECT * FROM {$wpdb->prefix}evanescent";
+		$sql = "SELECT * FROM {$wpdb->prefix}temporal";
 
 		if ( ! empty( $_REQUEST['orderby'] ) ) {
 			$sql .= ' ORDER BY ' . esc_sql( $_REQUEST['orderby'] );
@@ -56,7 +56,7 @@ class Invitees_List extends WP_List_Table {
 		global $wpdb;
 
 		$wpdb->delete(
-			"{$wpdb->prefix}evanescent",
+			"{$wpdb->prefix}temporal",
 			[ 'id' => $id ],
 			[ '%d' ]
 		);
@@ -71,7 +71,7 @@ class Invitees_List extends WP_List_Table {
 	public static function record_count() {
 		global $wpdb;
 
-		$sql = "SELECT COUNT(*) FROM {$wpdb->prefix}evanescent";
+		$sql = "SELECT COUNT(*) FROM {$wpdb->prefix}temporal";
 
 		return $wpdb->get_var( $sql );
 	}
@@ -79,7 +79,7 @@ class Invitees_List extends WP_List_Table {
 
 	/** Text displayed when no invitee data is available */
 	public function no_items() {
-		_e( 'No invitees avaliable.', 'evanescent' );
+		_e( 'No invitees avaliable.', 'temporal' );
 	}
 
 
@@ -105,7 +105,7 @@ class Invitees_List extends WP_List_Table {
 	      	return 'Not viewed';
 	      }
 	    case 'actions':
-	      return '<button class="evanescent-admin__show" type="button">Show Email</button>';
+	      return '<button class="temporal-admin__show" type="button">Show Login Info</button>';
 			default:
 				return print_r( $item, true ); //Show the whole array for troubleshooting purposes
 		}
@@ -133,7 +133,7 @@ class Invitees_List extends WP_List_Table {
    */
   function column_full_name( $item ) {
 
-    $delete_nonce = wp_create_nonce( 'evanescent_delete_invitee' );
+    $delete_nonce = wp_create_nonce( 'temporal_delete_invitee' );
 
     $title = '<strong>' . $item['last_name'] . ', ' . $item['first_name'] . '</strong>';
     //$actions = sprintf( '<a href="?page=%s&action=%s&gate=%s&_wpnonce=%s">Delete</a>', esc_attr( $_REQUEST['page'] ), 'delete', absint( $item['id'] ), $delete_nonce );
@@ -155,12 +155,12 @@ class Invitees_List extends WP_List_Table {
 	function get_columns() {
 		$columns = [
 			'cb'         => '<input type="checkbox" />',
-			'full_name'  => __( 'First Name', 'evanescent' ),
-			//'first_name' => __( 'First Name', 'evanescent' ),
-			//'last_name'  => __( 'Last Name', 'evanescent' ),
-			'email'      => __( 'Email', 'evanescent' ),
-			'viewed'     => __( 'Viewed', 'evanescent' ),
-			'actions'    => __( 'Actions', 'evanescent' )
+			'full_name'  => __( 'First Name', 'temporal' ),
+			//'first_name' => __( 'First Name', 'temporal' ),
+			//'last_name'  => __( 'Last Name', 'temporal' ),
+			'email'      => __( 'Email', 'temporal' ),
+			'viewed'     => __( 'Viewed', 'temporal' ),
+			'actions'    => __( 'Actions', 'temporal' )
 		];
 
 		return $columns;
@@ -228,7 +228,7 @@ class Invitees_List extends WP_List_Table {
 			// In our file that handles the request, verify the nonce.
 			$nonce = esc_attr( $_REQUEST['_wpnonce'] );
 
-			if ( ! wp_verify_nonce( $nonce, 'evanescent_delete_invitee' ) ) {
+			if ( ! wp_verify_nonce( $nonce, 'temporal_delete_invitee' ) ) {
 				die( 'Go get a life script kiddies' );
 			}
 			else {
@@ -278,7 +278,7 @@ class Invitees_List extends WP_List_Table {
 		$table_gates = EV_TABLE_GATES_NAME;
 		$gate = $item['gate'];
 
-		// Query wp_evanescent_gates for welcome_pid
+		// Query wp_temporal_gates for welcome_pid
     $query = "SELECT * FROM $table_gates WHERE name = '$gate'";
     $row   = $wpdb->get_row($query, ARRAY_A);
     $pid   = $row['pids'];
@@ -287,14 +287,14 @@ class Invitees_List extends WP_List_Table {
 		echo '<tr>';
 		$this->single_row_columns( $item );
 		echo '</tr>';
-		echo '<tr class="evanescent-email-row">';
+		echo '<tr class="temporal-email-row">';
 		echo   '<td colspan="' . $colspan . '">';
 		echo     "<textarea>";
 		echo     "Hi " . $item['first_name'] . ",\n\n";
 		echo     "Here is your login info:\n\n";
 		echo     "Email: " . $item['email'] . "\n";
 		echo     "Password: " . $item['pass'] . "\n";
-		echo     "Link: " . get_the_permalink($welcome_pid) . "?evanescent-pid=" . $pid . "\n\n";
+		echo     "Link: " . get_the_permalink($welcome_pid) . "?temporal-pid=" . $pid . "\n\n";
 		echo     "</textarea>";
 		echo   '</td>';
 		echo '</tr>';

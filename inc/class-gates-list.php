@@ -12,8 +12,8 @@ class Gates_List extends WP_List_Table {
   public function __construct() {
 
     parent::__construct( [
-      'singular' => __( 'Gate', 'evanescent' ), //singular name of the listed records
-      'plural'   => __( 'Gates', 'evanescent' ), //plural name of the listed records
+      'singular' => __( 'Gate', 'temporal' ), //singular name of the listed records
+      'plural'   => __( 'Gates', 'temporal' ), //plural name of the listed records
       'ajax'     => false //does this table support ajax?
     ] );
 
@@ -31,7 +31,7 @@ class Gates_List extends WP_List_Table {
 
     global $wpdb;
 
-    $sql = "SELECT * FROM {$wpdb->prefix}evanescent_gates";
+    $sql = "SELECT * FROM {$wpdb->prefix}temporal_gates";
 
     if ( ! empty( $_REQUEST['orderby'] ) ) {
       $sql .= ' ORDER BY ' . esc_sql( $_REQUEST['orderby'] );
@@ -56,7 +56,7 @@ class Gates_List extends WP_List_Table {
     global $wpdb;
 
     $wpdb->delete(
-      "{$wpdb->prefix}evanescent_gates",
+      "{$wpdb->prefix}temporal_gates",
       [ 'id' => $id ],
       [ '%d' ]
     );
@@ -71,7 +71,7 @@ class Gates_List extends WP_List_Table {
   public static function record_count() {
     global $wpdb;
 
-    $sql = "SELECT COUNT(*) FROM {$wpdb->prefix}evanescent_gates";
+    $sql = "SELECT COUNT(*) FROM {$wpdb->prefix}temporal_gates";
 
     return $wpdb->get_var( $sql );
   }
@@ -79,7 +79,7 @@ class Gates_List extends WP_List_Table {
 
   /** Text displayed when no gate data is available */
   public function no_items() {
-    _e( 'No gates avaliable.', 'evanescent' );
+    _e( 'No gates avaliable.', 'temporal' );
   }
 
 
@@ -126,7 +126,7 @@ class Gates_List extends WP_List_Table {
   
   function column_name( $item ) {
 
-    $delete_nonce = wp_create_nonce( 'evanescent_delete_gate' );
+    $delete_nonce = wp_create_nonce( 'temporal_delete_gate' );
 
     $title = '<strong>' . $item['name'] . '</strong>';
 
@@ -148,8 +148,8 @@ class Gates_List extends WP_List_Table {
   function get_columns() {
     $columns = [
       'cb'      => '<input type="checkbox" />',
-      'name'    => __( 'Gate Name', 'evanescent' ),
-      'pids'    => __( 'Page/Post ID', 'evanescent' )
+      'name'    => __( 'Gate Name', 'temporal' ),
+      'pids'    => __( 'Page/Post ID', 'temporal' )
     ];
 
     return $columns;
@@ -214,7 +214,7 @@ class Gates_List extends WP_List_Table {
       // In our file that handles the request, verify the nonce.
       $nonce = esc_attr( $_REQUEST['_wpnonce'] );
 
-      if ( ! wp_verify_nonce( $nonce, 'evanescent_delete_gate' ) ) {
+      if ( ! wp_verify_nonce( $nonce, 'temporal_delete_gate' ) ) {
         die( 'Go get a life script kiddies' );
       }
       else {
