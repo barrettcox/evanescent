@@ -4,7 +4,7 @@
 Plugin Name: Temporal
 Plugin URI:
 Description: Provides time sensitive access to WordPress pages
-Version: 0.1.3
+Version: 0.1.4
 Author: Barrett Cox
 Author URI:  http://barrettcox.com
 */
@@ -152,7 +152,9 @@ class Temporal {
 			'Temporal',
 			'Temporal',
 			'manage_options',
-			'temporal'
+			'temporal',
+      '', //$callable function
+      'none' // $icon_url added via CSS
 		);
 
     // Invitees admin page
@@ -185,18 +187,18 @@ class Temporal {
    * Enqueue admin scripts and styles
    */
   public function admin_scripts_and_styles() {
-    wp_enqueue_style('temporal_admin', $this->plugin_url . 'css/temporal-admin-v0.1.3.css' );
+    wp_enqueue_style('temporal_admin', $this->plugin_url . 'css/temporal-admin-v0.1.4.css' );
     wp_enqueue_script('jquery');
-    wp_enqueue_script('temporal_admin_script', $this->plugin_url . 'js/temporal-admin-v0.1.3.js', false, null, true );
+    wp_enqueue_script('temporal_admin_script', $this->plugin_url . 'js/temporal-admin-v0.1.4.js', false, null, true );
   }
 
   /**
    * Enqueue gate scripts and styles
    */
   public function gate_scripts_and_styles() {
-    wp_enqueue_style('temporal', $this->plugin_url . 'css/temporal-v0.1.3.css' );
+    wp_enqueue_style('temporal', $this->plugin_url . 'css/temporal-v0.1.4.css' );
     wp_enqueue_script('jquery');
-    wp_enqueue_script('temporal_ajax_script', $this->plugin_url . 'js/temporal-ajax-v0.1.3.js', false, null, true );
+    wp_enqueue_script('temporal_ajax_script', $this->plugin_url . 'js/temporal-ajax-v0.1.4.js', false, null, true );
     wp_localize_script('temporal_ajax_script', 'frontendajax', array( 'ajaxurl' => admin_url( 'admin-ajax.php' )));
   }
 

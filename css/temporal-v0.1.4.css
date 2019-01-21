@@ -50,3 +50,11 @@
   padding: 0 2px;
   font-weight: 600;
 }
+
+li.toplevel_page_temporal .wp-menu-image {
+  background-image: url('/wp-content/plugins/temporal/img/temporal_inverse.svg');
+  background-size: 50%;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
