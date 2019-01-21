@@ -94,7 +94,7 @@ class Invitees_List extends WP_List_Table {
 	public function column_default( $item, $column_name ) {
 		switch ( $column_name ) {
 
-      case 'email':
+      case 'username':
         return $item[ $column_name ];
 	    case 'viewed':
 	      if (boolval($item[ $column_name ])) {
@@ -158,7 +158,7 @@ class Invitees_List extends WP_List_Table {
 			'full_name'  => __( 'First Name', 'temporal' ),
 			//'first_name' => __( 'First Name', 'temporal' ),
 			//'last_name'  => __( 'Last Name', 'temporal' ),
-			'email'      => __( 'Email', 'temporal' ),
+			'username'      => __( 'Username', 'temporal' ),
 			'viewed'     => __( 'Viewed', 'temporal' ),
 			'actions'    => __( 'Actions', 'temporal' )
 		];
@@ -176,7 +176,7 @@ class Invitees_List extends WP_List_Table {
 		$sortable_columns = array(
 			'first_name' => array( 'first_name', true ),
 			'last_name'  => array( 'last_name', true ),
-      'email'      => array( 'email', true ),
+      'username'      => array( 'username', true ),
       'viewed'     => array( 'viewed', true )
 		);
 
@@ -287,12 +287,12 @@ class Invitees_List extends WP_List_Table {
 		echo '<tr>';
 		$this->single_row_columns( $item );
 		echo '</tr>';
-		echo '<tr class="temporal-email-row">';
+		echo '<tr class="temporal-username-row">';
 		echo   '<td colspan="' . $colspan . '">';
 		echo     "<textarea>";
 		echo     "Hi " . $item['first_name'] . ",\n\n";
 		echo     "Here is your login info:\n\n";
-		echo     "Email: " . $item['email'] . "\n";
+		echo     "Username: " . $item['username'] . "\n";
 		echo     "Password: " . $item['pass'] . "\n";
 		echo     "Link: " . get_the_permalink($welcome_pid) . "?temporal-pid=" . $pid . "\n\n";
 		echo     "</textarea>";

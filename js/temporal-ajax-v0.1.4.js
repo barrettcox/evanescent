@@ -17,7 +17,7 @@ var Temporal = Temporal || {};
     }
 
     if (Temporal.invitee.length) {
-      Temporal.email = Temporal.invitee.attr('data-temporal-email');
+      Temporal.username = Temporal.invitee.attr('data-temporal-username');
       Temporal.gate  = Temporal.invitee.attr('data-temporal-gate');
       Temporal.url   = Temporal.invitee.attr('data-temporal-url');
       Temporal.ajaxCheckTime(true);
@@ -51,7 +51,7 @@ var Temporal = Temporal || {};
       url: frontendajax.ajaxurl,
       data: {
         'action' : 'temporal_ajax_check_time',
-        'email' : Temporal.email,
+        'username' : Temporal.username,
         'gate' : Temporal.gate
       },
       success:function(data) {
@@ -128,9 +128,9 @@ var Temporal = Temporal || {};
     $.ajax({
       url: frontendajax.ajaxurl,
       data: {
-        'action' : 'temporal_ajax_init_secondary',
-        'email' : Temporal.email,
-        'gate' : Temporal.gate
+        'action'   : 'temporal_ajax_init_secondary',
+        'username' : Temporal.username,
+        'gate'     : Temporal.gate
       },
       success:function(data) {
         console.log(data);

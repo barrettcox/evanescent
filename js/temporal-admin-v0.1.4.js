@@ -11,7 +11,7 @@
 
     if (showEmailButton.length) {
       showEmailButton.click(function(){
-        var emailRow = $(this).closest('tr').next('.temporal-email-row');
+        var emailRow = $(this).closest('tr').next('.temporal-username-row');
         if (emailRow.length) {
           if (emailRow.is(':visible')) {
             emailRow.hide();

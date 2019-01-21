@@ -33,7 +33,7 @@ function temporal_install() {
   $sql = "CREATE TABLE $table (
          `id` mediumint(9) NOT NULL AUTO_INCREMENT,
          `timestamp` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-         `email` varchar(254) NOT NULL DEFAULT '',
+         `username` varchar(254) NOT NULL DEFAULT '',
          `first_name` varchar(255) NOT NULL DEFAULT '',
          `last_name` varchar(255) NOT NULL DEFAULT '',
          `pass` varchar(8) NOT NULL DEFAULT '',
@@ -211,7 +211,7 @@ class Temporal {
     if ( isset($_REQUEST) ) {
 
       $sanitized = $this->sanitize($_REQUEST);
-      $email = $sanitized['email'];
+      $username = $sanitized['username'];
       $gate = $sanitized['gate'];
 
       // Query table_gates for welcome_pid
@@ -219,8 +219,8 @@ class Temporal {
       $row   = $wpdb->get_row($query, ARRAY_A);
       $welcome_pid = $row['welcome_pid'];
 
-      // Query table for email
-      $query = "SELECT * FROM {$this->table}  WHERE email = '$email' and gate = '$gate'";
+      // Query table for username
+      $query = "SELECT * FROM {$this->table}  WHERE username = '$username' and gate = '$gate'";
       $row = $wpdb->get_row($query, ARRAY_A);
       $settings = get_option('temporal_settings');
 
@@ -251,11 +251,11 @@ class Temporal {
     if ( isset($_REQUEST) ) {
 
       $sanitized = $this->sanitize($_REQUEST);
-      $email = $sanitized['email'];
+      $username = $sanitized['username'];
       $gate = $sanitized['gate'];
       $dt = date('Y-m-d H:i:s'); // Current date/time
 
-      $query = "SELECT * FROM {$this->table} WHERE email = '$email' and gate = '$gate'";
+      $query = "SELECT * FROM {$this->table} WHERE username = '$username' and gate = '$gate'";
       $row   = $wpdb->get_row($query, ARRAY_A);
 
       if (boolval($row['init_secondary'])) {
@@ -263,7 +263,7 @@ class Temporal {
       }
       else {
         // Update secondary value and timestamp in db
-        $query = "UPDATE {$this->table}  SET init_secondary = 1, timestamp = '$dt' WHERE email = '$email' and gate = '$gate'";
+        $query = "UPDATE {$this->table}  SET init_secondary = 1, timestamp = '$dt' WHERE username = '$username' and gate = '$gate'";
         $result = $wpdb->query($query);
 
         if($result) {
@@ -344,7 +344,7 @@ class Temporal {
     }
     else
     if (100 == $err) {
-      $err_message = 'Your email or password is incorrect.';
+      $err_message = 'Your username or password is incorrect.';
     }
     else
     if (101 == $err) {
@@ -360,8 +360,8 @@ class Temporal {
 
     $new_input = [];
 
-    if (isset($input['email'])) {
-      $new_input['email'] = sanitize_text_field($input['email']);
+    if (isset($input['username'])) {
+      $new_input['username'] = sanitize_text_field($input['username']);
     }
     if (isset($input['pass'])) {
       $new_input['pass'] = sanitize_text_field($input['pass']);
@@ -402,12 +402,12 @@ class Temporal {
     return $new_input;
   }
 
-  public function email_cb() {
+  public function username_cb() {
     echo '<div>';
-    echo '<label for="temporal-email">Email</label>';
+    echo '<label for="temporal-username">username</label>';
     printf(
-      '<input id="temporal-email" name="temporal_add_data[email]" size="50" value="%s" >',
-      isset($this->add_data['email']) ? esc_attr($this->add_data['email']) : ''
+      '<input id="temporal-username" name="temporal_add_data[username]" size="50" value="%s" >',
+      isset($this->add_data['username']) ? esc_attr($this->add_data['username']) : ''
     );
     echo '</div>';
   }
@@ -432,7 +432,7 @@ class Temporal {
     echo '</div>';
   }
   
-  public function email_gate_cb() {
+  public function username_gate_cb() {
     echo '<div>';
     echo '<label for="temporal-gate-select">Gate</label>';
     printf(
@@ -537,7 +537,7 @@ class Temporal {
       [
         // MySQL default for timestamp when added
         //'timestamp'  => $d,
-        'email'      => $input['email'],
+        'username'      => $input['username'],
         'first_name' => $input['first-name'],
         'last_name'  => $input['last-name'],
         'gate'       => $input['gate'],
@@ -589,20 +589,20 @@ class Temporal {
     return $remaining;
   }
 
-  public function output_data_atts($email, $gate, $pids, $welcome_pid) {
+  public function output_data_atts($username, $gate, $pids, $welcome_pid) {
     $welcome_url = get_the_permalink($welcome_pid);
-    return '<div id="temporal-invitee" style="display:none;" data-temporal-email="' . $email . '" data-temporal-gate="' . $gate . '" data-temporal-url="' . $welcome_url . '?temporal-pid=' . $pids . '&temporal-err=101"></div>';
+    return '<div id="temporal-invitee" style="display:none;" data-temporal-username="' . $username . '" data-temporal-gate="' . $gate . '" data-temporal-url="' . $welcome_url . '?temporal-pid=' . $pids . '&temporal-err=101"></div>';
   }
 
-  public function create_session_vars($email) {
+  public function create_session_vars($username) {
     $_SESSION['temporal_auth'] = true;
-    $_SESSION['temporal_email'] = $email;
+    $_SESSION['temporal_username'] = $username;
     return;
   }
 
   public function destroy_session_vars() {
     unset($_SESSION['temporal_auth']);
-    unset($_SESSION['temporal_email']);
+    unset($_SESSION['temporal_username']);
     return;
   }
 
@@ -620,12 +620,12 @@ class Temporal {
     die;
   }
 
-  public function set_expired_and_redirect($email, $gate, $welcome_pid) {
+  public function set_expired_and_redirect($username, $gate, $welcome_pid) {
 
     global $post;
     global $wpdb;
 
-    $query = "UPDATE {$this->table}  SET expired = 1 WHERE email = '$email' and gate = '$gate'";
+    $query = "UPDATE {$this->table}  SET expired = 1 WHERE username = '$username' and gate = '$gate'";
     $result = $wpdb->query($query);
     $this->destroy_session_vars();
     // Redirect and return.
@@ -647,15 +647,21 @@ class Temporal {
 
     // Check pids and set up redirect
     foreach ($results as $gate) :
-      if ($post->ID == $gate['pids']) :
+
+      $gates = explode(',', $gate['pids']);
+
+      $gates = ! empty($gates) ? $gates : [ intval($gate['pids']) ]; // Convert to array
+
+      if (in_array($post->ID, $gates)) :
+
         // Gate found for this post
         if (isset($_POST['temporal_login'])) :
           // Login data exists
           $sanitized = $this->sanitize($_POST['temporal_login']);
-          $email     = isset($sanitized['email']) ? $sanitized['email'] : '';
+          $username     = isset($sanitized['username']) ? $sanitized['username'] : '';
           $pass      = isset($sanitized['pass']) ? $sanitized['pass'] : '';
           
-          $query = "SELECT * FROM {$this->table}  WHERE email = '$email' and pass = '$pass'";
+          $query = "SELECT * FROM {$this->table}  WHERE username = '$username' and pass = '$pass'";
           $row = $wpdb->get_row($query, ARRAY_A);
           if ($row && count($row) > 1) :
             // Login matches, keep going...
@@ -672,13 +678,13 @@ class Temporal {
             else
             if (!$viewed) {
               // Not previously viewed, so mark the video as 'viewed' and update the timestamp
-              $query = "UPDATE {$this->table}  SET viewed = 1, timestamp = '$dt' WHERE email = '$email' and gate = '" . $row['gate'] . "'";
+              $query = "UPDATE {$this->table}  SET viewed = 1, timestamp = '$dt' WHERE username = '$username' and gate = '" . $row['gate'] . "'";
               $result = $wpdb->query($query);
               // User has permission.
               // No redirect.
               //echo 'Success';
-              $this->create_session_vars($email);
-              echo $this->output_data_atts($email, $gate['name'], $gate['pids'], $gate['welcome_pid']); // Add data atts to page
+              $this->create_session_vars($username);
+              echo $this->output_data_atts($username, $gate['name'], $gate['pids'], $gate['welcome_pid']); // Add data atts to page
               return;
             }
             else {
@@ -689,24 +695,24 @@ class Temporal {
                 // Timestamp not expired. User has permission.
                 // No redirect.
                 //echo 'Success';
-                //$this->create_session_vars($email);
-                echo $this->output_data_atts($email, $gate['name'], $gate['pids'], $gate['welcome_pid']); // Add data atts to page
+                //$this->create_session_vars($username);
+                echo $this->output_data_atts($username, $gate['name'], $gate['pids'], $gate['welcome_pid']); // Add data atts to page
                 return;
               }
               else {
                 // Timestamp is expired.
                 // Set expired to 1, redirect and return.
-                $this->set_expired_and_redirect($email, $row['gate'], $gate['welcome_pid']);
+                $this->set_expired_and_redirect($username, $row['gate'], $gate['welcome_pid']);
                 return;
               }
             }
           endif; // Login matches
-        elseif(isset($_SESSION['temporal_auth']) && $_SESSION['temporal_auth'] && isset($_SESSION['temporal_email'])) :
+        elseif(isset($_SESSION['temporal_auth']) && $_SESSION['temporal_auth'] && isset($_SESSION['temporal_username'])) :
           // No login data, but session vars already exists.
           // Query the db for timestamp
-          $email     = $_SESSION['temporal_email'];
+          $username     = $_SESSION['temporal_username'];
           $gate_name = $gate['name'];
-          $query = "SELECT * FROM {$this->table}  WHERE email = '$email' and gate = '$gate_name'";
+          $query = "SELECT * FROM {$this->table}  WHERE username = '$username' and gate = '$gate_name'";
           $row = $wpdb->get_row($query, ARRAY_A);
 
           $settings = get_option('temporal_settings');
@@ -714,14 +720,14 @@ class Temporal {
           if(!$this->timestamp_expired($row['timestamp'], $duration)) {
             // Timestamp not expired.
             // No redirect.
-            echo $this->output_data_atts($email, $gate_name, $gate['pids'], $gate['welcome_pid']); // Add data atts to page
+            echo $this->output_data_atts($username, $gate_name, $gate['pids'], $gate['welcome_pid']); // Add data atts to page
             //echo 'Success: session vars good!';
             return;
           }
           else {
             // Timestamp is expired.
             // Set expired to 1, redirect and return.
-            $this->set_expired_and_redirect($email, $row['gate'], $gate['welcome_pid']);
+            $this->set_expired_and_redirect($username, $row['gate'], $gate['welcome_pid']);
             return;
           }
         else :

@@ -16,9 +16,9 @@ $err_overrides = [ 101 => $row['content_expired'] ];
     // If expired, no form
   else : ?>
   <form method="post" action="<?php the_permalink($sanitized['temporal-pid']); ?>">
-    <div><label for="temporal-gate-pids">Email</label></div>
+    <div><label for="temporal-gate-pids">Username</label></div>
     <div>
-    <input id="temporal-email" name="temporal_login[email]" size="25" value="">
+    <input id="temporal-username" name="temporal_login[username]" size="25" value="" type="text">
     </div>
     <div><label for="temporal-gate-pids">Password</label></div>
     <div>

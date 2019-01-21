@@ -8,7 +8,7 @@ $this->settings_data = $this->sanitize($_POST['temporal_settings']);
 
 if (count($this->add_data)) {
   $data = $this->add_new($this->add_data);
-  if ($data) $this->msg = 'New email added.';
+  if ($data) $this->msg = 'New username added.';
 }
 
 if (count($this->settings_data)) {
@@ -60,8 +60,8 @@ if (count($this->settings_data)) {
       <?php
       $this->first_name_cb();
       $this->last_name_cb();
-      $this->email_cb();
-      $this->email_gate_cb();
+      $this->username_cb();
+      $this->username_gate_cb();
       submit_button('Add');
       ?>
     </form>
