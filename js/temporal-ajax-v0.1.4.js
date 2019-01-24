@@ -55,23 +55,31 @@ var Temporal = Temporal || {};
         'gate' : Temporal.gate
       },
       success:function(data) {
+
         if (data == 'expired') {
           // Expired
           window.location.href = Temporal.url;
         }
+
         else {
           // Not yet expired
+
           try {
             var obj = JSON.parse(data);
+
             // If neccessary, initiate the timer
             if (initTimer) {
+
+              // If secondary event has been triggered and the timer is not visible...
               if (obj.secondary && Temporal.timer.not(':visible')) {
                 Temporal.timer.show();
               }
+
               Temporal.timer.attr('data-temporal-remaining', obj.remaining);
-              Temporal.startInterval();
+              Temporal.startInterval(obj.secondary);
             }
           }
+
           catch(err) {
             console.log('Problem with JSON object: ');
             console.log(data);
@@ -84,7 +92,7 @@ var Temporal = Temporal || {};
     });
   };
 
-  Temporal.startInterval = function() {
+  Temporal.startInterval = function(secondaryTriggered) {
     // Using anonymous function so we can pass params inside setInterval
     var counter = 0;
 
@@ -97,27 +105,39 @@ var Temporal = Temporal || {};
 
       console.log('interval');
  
-      var timer          = Temporal.timer,
-          timerRemaining = timer.attr('data-temporal-remaining');
+      var timer = Temporal.timer;
 
-      timerRemaining = parseInt(timerRemaining) - 1;
-
-      if (!timerRemaining) {
-        // Timer is 0, redirect
+      // If timer exists on page
+      if (secondaryTriggered && !timer.length) {
+        // Event was triggered but timer is missing from the DOM,
+        // so let's redirect
         window.location.href = Temporal.url;
       }
 
-      var timerText = Temporal.getHMS(timerRemaining);
+      else
+      if (timer.length) {
 
-      timer.attr('data-temporal-remaining', timerRemaining);
+        var timerRemaining = timer.attr('data-temporal-remaining');
 
-      // Update the timer if it is visible
-      if (timer.is(':visible')) {
-        timer.children('.temporal-timer__time').html(timerText);
-      }
+        timerRemaining = parseInt(timerRemaining) - 1;
 
-      if (counter % 10 == 0) {
-        Temporal.ajaxCheckTime();             
+        if (!timerRemaining) {
+          // Timer is 0, redirect
+          window.location.href = Temporal.url;
+        }
+
+        var timerText = Temporal.getHMS(timerRemaining);
+
+        timer.attr('data-temporal-remaining', timerRemaining);
+
+        // Update the timer if it is visible
+        if (timer.is(':visible')) {
+          timer.children('.temporal-timer__time').html(timerText);
+        }
+
+        if (counter % 10 == 0) {
+          Temporal.ajaxCheckTime();             
+        }
       }
       
       counter++;  

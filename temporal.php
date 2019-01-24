@@ -230,11 +230,12 @@ class Temporal {
       if(!$this->timestamp_expired($row['timestamp'], $duration)) {
         // Timestamp not expired.
         $remaining = $this->get_remaining_time($row['timestamp'], $duration);
-        $result = [ 'remaining' => $remaining, 'secondary' => intval($row['init_secondary']) ];
-        echo json_encode($result);
+        $result = [ "remaining" => $remaining, "secondary" => intval($row['init_secondary']) ];
+        echo json_encode($result); // Output for JS
       }
       else {
         // Timestamp is expired.
+        set_expired($username, $gate, $welcome_pid);
         echo 'expired';
       }
     }
@@ -463,6 +464,7 @@ class Temporal {
     $settings = get_option('temporal_settings');
     echo '<div>';
     echo '<label for="temporal-duration-secondary">Secondary Duration (seconds)</label>';
+    echo '<p><em>The countdown for the Secondary Duration occurs after some triggering event.</em></p>';
     printf(
       '<input id="temporal-duration-secondary" name="temporal_settings[duration-secondary]" size="15" value="%s" >',
       isset($settings['duration-secondary']) ? $settings['duration-secondary'] : 0 // Default to 0 seconds if the option does not exist
@@ -537,7 +539,7 @@ class Temporal {
       [
         // MySQL default for timestamp when added
         //'timestamp'  => $d,
-        'username'      => $input['username'],
+        'username'   => $input['username'],
         'first_name' => $input['first-name'],
         'last_name'  => $input['last-name'],
         'gate'       => $input['gate'],
@@ -620,15 +622,28 @@ class Temporal {
     die;
   }
 
-  public function set_expired_and_redirect($username, $gate, $welcome_pid) {
-
+  public function set_expired($username, $gate, $welcome_pid) {
     global $post;
     global $wpdb;
 
     $query = "UPDATE {$this->table}  SET expired = 1 WHERE username = '$username' and gate = '$gate'";
     $result = $wpdb->query($query);
     $this->destroy_session_vars();
+    return;
+  }
+
+  public function set_expired_and_redirect($username, $gate, $welcome_pid) {
+
+    global $post;
+    /*
+    global $wpdb;
+
+    $query = "UPDATE {$this->table}  SET expired = 1 WHERE username = '$username' and gate = '$gate'";
+    $result = $wpdb->query($query);
+    $this->destroy_session_vars();
     // Redirect and return.
+    */
+    $this->set_expired($username, $gate, $welcome_pid);
     $this->redirect($welcome_pid, $post->ID, 101); // 101 (expired)
     return;
   }
@@ -653,17 +668,20 @@ class Temporal {
       $gates = ! empty($gates) ? $gates : [ intval($gate['pids']) ]; // Convert to array
 
       if (in_array($post->ID, $gates)) :
-
         // Gate found for this post
+
         if (isset($_POST['temporal_login'])) :
           // Login data exists
           $sanitized = $this->sanitize($_POST['temporal_login']);
-          $username     = isset($sanitized['username']) ? $sanitized['username'] : '';
+          $username  = isset($sanitized['username']) ? $sanitized['username'] : '';
           $pass      = isset($sanitized['pass']) ? $sanitized['pass'] : '';
           
           $query = "SELECT * FROM {$this->table}  WHERE username = '$username' and pass = '$pass'";
           $row = $wpdb->get_row($query, ARRAY_A);
+
+          // Login matches
           if ($row && count($row) > 1) :
+
             // Login matches, keep going...
             $viewed  = boolval($row['viewed']) ? true : false;
             $expired = boolval($row['expired']) ? true : false;
@@ -675,6 +693,7 @@ class Temporal {
               $this->redirect($gate['welcome_pid'], $post->ID, 101); // 101 (expired)
               return;
             }
+
             else
             if (!$viewed) {
               // Not previously viewed, so mark the video as 'viewed' and update the timestamp
@@ -687,6 +706,7 @@ class Temporal {
               echo $this->output_data_atts($username, $gate['name'], $gate['pids'], $gate['welcome_pid']); // Add data atts to page
               return;
             }
+
             else {
               // Previously logged in and viewed, so let's check the timestamp
               $settings = get_option('temporal_settings');
@@ -699,6 +719,7 @@ class Temporal {
                 echo $this->output_data_atts($username, $gate['name'], $gate['pids'], $gate['welcome_pid']); // Add data atts to page
                 return;
               }
+
               else {
                 // Timestamp is expired.
                 // Set expired to 1, redirect and return.
@@ -706,36 +727,52 @@ class Temporal {
                 return;
               }
             }
-          endif; // Login matches
+
+          // Login incorrect, so redirect
+          else :
+            $this->redirect($gate['welcome_pid'], $post->ID);
+            return;
+          endif;
+
         elseif(isset($_SESSION['temporal_auth']) && $_SESSION['temporal_auth'] && isset($_SESSION['temporal_username'])) :
           // No login data, but session vars already exists.
+
+
           // Query the db for timestamp
-          $username     = $_SESSION['temporal_username'];
+          $username  = $_SESSION['temporal_username'];
           $gate_name = $gate['name'];
-          $query = "SELECT * FROM {$this->table}  WHERE username = '$username' and gate = '$gate_name'";
-          $row = $wpdb->get_row($query, ARRAY_A);
+          $query     = "SELECT * FROM {$this->table}  WHERE username = '$username' and gate = '$gate_name'";
+          $row       = $wpdb->get_row($query, ARRAY_A);
 
           $settings = get_option('temporal_settings');
           $duration = $settings ? $settings['duration'] : 3600; // Default to 3600 seconds (1 hour) if the option does not exist
+
+
           if(!$this->timestamp_expired($row['timestamp'], $duration)) {
+          //echo 'duration';
+          //var_dump('');
+          //die();
             // Timestamp not expired.
             // No redirect.
             echo $this->output_data_atts($username, $gate_name, $gate['pids'], $gate['welcome_pid']); // Add data atts to page
             //echo 'Success: session vars good!';
             return;
           }
+
           else {
             // Timestamp is expired.
             // Set expired to 1, redirect and return.
             $this->set_expired_and_redirect($username, $row['gate'], $gate['welcome_pid']);
             return;
           }
+
         else :
           // No $_POST vars. No session vars. This is likely a direct link.
           // Redirect and return.
           $this->redirect($gate['welcome_pid'], $post->ID);
           return;
         endif;
+
       endif; // Gate found
     endforeach;
   }

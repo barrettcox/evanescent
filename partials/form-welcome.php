@@ -27,7 +27,7 @@ $err_overrides = [ 101 => $row['content_expired'] ];
 
     <?php echo $row['content_after_fields']; ?>
 
-    <input type="submit" value="Yes">
+    <input type="submit" value="Go">
   </form>
   <?php
   endif;
