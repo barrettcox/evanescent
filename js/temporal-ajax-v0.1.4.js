@@ -6,8 +6,9 @@ var Temporal = Temporal || {};
 
   Temporal.init = function() {
     var defaults = {
-          'invitee' : $('#temporal-invitee'),
-          'timer' : $('#temporal-timer'),
+          'invitee'         : $('#temporal-invitee'),
+          'timer'           : $('#temporal-timer'),
+          'triggerSelector' : '[data-temporal-trigger]',
         };
 
     for (var prop in defaults) {
@@ -18,10 +19,22 @@ var Temporal = Temporal || {};
 
     if (Temporal.invitee.length) {
       Temporal.username = Temporal.invitee.attr('data-temporal-username');
-      Temporal.gate  = Temporal.invitee.attr('data-temporal-gate');
-      Temporal.url   = Temporal.invitee.attr('data-temporal-url');
+      Temporal.gateName = Temporal.invitee.attr('data-temporal-gate-name');
+      Temporal.gateId   = Temporal.invitee.attr('data-temporal-gate');
+      Temporal.url      = Temporal.invitee.attr('data-temporal-url');
       Temporal.ajaxCheckTime(true);
     }
+
+    //if (Temporal.trigger.length) {
+    $(document).on('click', Temporal.triggerSelector ,function(e) {
+      e.preventDefault();
+
+      var gateId = $(this).attr('data-temporal-gate') || Temporal.gateId;
+
+      Temporal.startSecondaryTimer(gateId);
+
+    }); 
+    //}
   };
 
   // Adds leading zeros to single digits
@@ -52,7 +65,7 @@ var Temporal = Temporal || {};
       data: {
         'action' : 'temporal_ajax_check_time',
         'username' : Temporal.username,
-        'gate' : Temporal.gate
+        'gate' : Temporal.gateId
       },
       success:function(data) {
 
@@ -107,36 +120,38 @@ var Temporal = Temporal || {};
  
       var timer = Temporal.timer;
 
-      // If timer exists on page
-      if (secondaryTriggered && !timer.length) {
+      if (secondaryTriggered) {
+
         // Event was triggered but timer is missing from the DOM,
         // so let's redirect
-        window.location.href = Temporal.url;
-      }
-
-      else
-      if (timer.length) {
-
-        var timerRemaining = timer.attr('data-temporal-remaining');
-
-        timerRemaining = parseInt(timerRemaining) - 1;
-
-        if (!timerRemaining) {
-          // Timer is 0, redirect
+        if (!timer.length) {
           window.location.href = Temporal.url;
         }
 
-        var timerText = Temporal.getHMS(timerRemaining);
+        // Timer exists in DOM
+        else {
 
-        timer.attr('data-temporal-remaining', timerRemaining);
+          var timerRemaining = timer.attr('data-temporal-remaining');
 
-        // Update the timer if it is visible
-        if (timer.is(':visible')) {
-          timer.children('.temporal-timer__time').html(timerText);
-        }
+          timerRemaining = parseInt(timerRemaining) - 1;
 
-        if (counter % 10 == 0) {
-          Temporal.ajaxCheckTime();             
+          if (!timerRemaining) {
+            // Timer is 0, redirect
+            window.location.href = Temporal.url;
+          }
+
+          var timerText = Temporal.getHMS(timerRemaining);
+
+          timer.attr('data-temporal-remaining', timerRemaining);
+
+          // Update the timer if it is visible
+          if (timer.is(':visible')) {
+            timer.children('.temporal-timer__time').html(timerText);
+          }
+
+          if (counter % 10 == 0) {
+            Temporal.ajaxCheckTime();             
+          }
         }
       }
       
@@ -144,15 +159,19 @@ var Temporal = Temporal || {};
     }, 1000); // Every 1 second
   };
   
-  Temporal.startSecondaryTimer = function() {
+  Temporal.startSecondaryTimer = function(gateId) {
+
+    var gateId = gateId || Temporal.gateId;
+
     $.ajax({
       url: frontendajax.ajaxurl,
       data: {
         'action'   : 'temporal_ajax_init_secondary',
         'username' : Temporal.username,
-        'gate'     : Temporal.gate
+        'gate'     : gateId
       },
-      success:function(data) {
+
+      success: function(data) {
         console.log(data);
         if (data == 'success') {
           // Secondary timer has been initiated in the db
@@ -163,14 +182,16 @@ var Temporal = Temporal || {};
           // Problem updating the database
         }
       },
+
       error: function(errorThrown) {
         console.log(errorThrown);
       }
     });
   };
-  
+
   $(document).ready(function() {
     Temporal.init();  
   });
+
 
 })( jQuery );

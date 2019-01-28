@@ -6,6 +6,7 @@
 $this->add_gate_data = $this->sanitize($_POST['temporal_add_gate_data']);
 
 if (count($this->add_gate_data)) {
+
   $data = $this->add_new_gate($this->add_gate_data);
   if ($data) $this->msg = 'New gate added.';
 }

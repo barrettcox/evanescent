@@ -37,7 +37,7 @@ function temporal_install() {
          `first_name` varchar(255) NOT NULL DEFAULT '',
          `last_name` varchar(255) NOT NULL DEFAULT '',
          `pass` varchar(8) NOT NULL DEFAULT '',
-         `gate` varchar(50) NOT NULL DEFAULT '',
+         `gate` mediumint(9) NOT NULL DEFAULT 0,
          `viewed` tinyint(1) NOT NULL DEFAULT 0,
          `init_secondary` tinyint(1) NOT NULL DEFAULT 0,
          `sent` tinyint(1) NOT NULL DEFAULT 0,
@@ -61,8 +61,7 @@ function temporal_install() {
   dbDelta($sql_pages);
 
   // Create options
-  add_option( 'temporal_settings', ['duration' => 3600,
-                                      'duration-secondary' => 0 ], '', 'yes' );
+  add_option( 'temporal_settings', [ 'duration' => 3600, 'duration-secondary' => 0 ], '', 'yes' );
 
 }
 
@@ -211,11 +210,11 @@ class Temporal {
     if ( isset($_REQUEST) ) {
 
       $sanitized = $this->sanitize($_REQUEST);
-      $username = $sanitized['username'];
-      $gate = $sanitized['gate'];
+      $username  = $sanitized['username'];
+      $gate      = $sanitized['gate'];
 
       // Query table_gates for welcome_pid
-      $query = "SELECT * FROM {$this->table_gates} WHERE name = '$gate'";
+      $query = "SELECT * FROM {$this->table_gates} WHERE id = '$gate'";
       $row   = $wpdb->get_row($query, ARRAY_A);
       $welcome_pid = $row['welcome_pid'];
 
@@ -243,6 +242,13 @@ class Temporal {
     die();
   }
 
+  // Returns gated pids as an array of integers
+  public function gated_posts_array($pids) {
+    $gated_posts = explode(',', $pids);
+    $gated_posts = ! empty($gated_posts) ? $gated_posts : [ intval($pids) ];
+    return $gated_posts;
+  }
+
   // Handles AJAX request for starting secondary timer
   public function temporal_ajax_init_secondary() {
 
@@ -252,12 +258,11 @@ class Temporal {
     if ( isset($_REQUEST) ) {
 
       $sanitized = $this->sanitize($_REQUEST);
-      $username = $sanitized['username'];
-      $gate = $sanitized['gate'];
-      $dt = date('Y-m-d H:i:s'); // Current date/time
-
-      $query = "SELECT * FROM {$this->table} WHERE username = '$username' and gate = '$gate'";
-      $row   = $wpdb->get_row($query, ARRAY_A);
+      $username  = $sanitized['username'];
+      $gate      = $sanitized['gate'];
+      $dt        = date('Y-m-d H:i:s'); // Current date/time
+      $query     = "SELECT * FROM {$this->table} WHERE username = '$username' and gate = '$gate'";
+      $row       = $wpdb->get_row($query, ARRAY_A);
 
       if (boolval($row['init_secondary'])) {
         echo 'Secondary already initiated';
@@ -364,42 +369,59 @@ class Temporal {
     if (isset($input['username'])) {
       $new_input['username'] = sanitize_text_field($input['username']);
     }
+
     if (isset($input['pass'])) {
       $new_input['pass'] = sanitize_text_field($input['pass']);
     }
+
     if (isset($input['first-name'])) {
       $new_input['first-name'] = sanitize_text_field($input['first-name']);
     }
+
     if (isset($input['last-name'])) {
       $new_input['last-name'] = sanitize_text_field($input['last-name']);
     }
+
     if (isset($input['duration'])) {
       $new_input['duration'] = sanitize_text_field(intval($input['duration'])); // int values only
     }
+
     if (isset($input['duration-secondary'])) {
       $new_input['duration-secondary'] = sanitize_text_field(intval($input['duration-secondary'])); // int values only
     }
+
     if (isset($input['gate'])) {
-      $new_input['gate'] = sanitize_text_field($input['gate']);
+      $new_input['gate'] = sanitize_text_field(intval($input['gate']));
     }
+
+    if (isset($input['gate-name'])) {
+      $new_input['gate-name'] = sanitize_text_field($input['gate-name']);
+    }
+
     if (isset($input['content-after-fields'])) {
       $new_input['content-after-fields'] = wp_kses_post($input['content-after-fields']);
     }
+
     if (isset($input['content-expired'])) {
       $new_input['content-expired'] = wp_kses_post($input['content-expired']);
     }
+
     if (isset($input['temporal-pid'])) {
       $new_input['temporal-pid'] = sanitize_text_field(intval($input['temporal-pid'])); // int values only
     }
+
     if (isset($input['pids'])) {
       $new_input['pids'] = sanitize_text_field($input['pids']);
     }
+
     if (isset($input['welcome-pid'])) {
       $new_input['welcome-pid'] = sanitize_text_field(intval($input['welcome-pid']));
     }
+
     if (isset($input['temporal-err'])) {
       $new_input['temporal-err'] = sanitize_text_field(intval($input['temporal-err'])); // int values only
     }
+
     return $new_input;
   }
 
@@ -436,15 +458,13 @@ class Temporal {
   public function username_gate_cb() {
     echo '<div>';
     echo '<label for="temporal-gate-select">Gate</label>';
-    printf(
-      '<select id="temporal-gate-select" name="temporal_add_data[gate]" value="%s" >',
-      isset($this->add_data['gate']) ? esc_attr($this->add_data['gate']) : ''
-    );
+    echo '<select id="temporal-gate-select" name="temporal_add_data[gate]">';
     foreach ($this->gate_results as $gate) {
-      $name = isset($gate['name']) ? esc_attr($gate['name']) : '';
-      echo sprintf('<option value="%s">%s</option>', $name, $name);
+      $gate_id   = isset($gate['id']) ? esc_attr($gate['id']) : '';
+      $gate_name = isset($gate['name']) ? esc_attr($gate['name']) : '';
+      echo sprintf('<option value="%s">%s</option>', $gate_id, $gate_name);
     }
-    print('</select>');
+    echo '</select>';
     echo '</div>';
   }
 
@@ -476,8 +496,8 @@ class Temporal {
     echo '<div>';
     echo '<label for="temporal-gate-name">Gate Name</label>';
     printf(
-      '<input id="temporal-gate-name" name="temporal_add_gate_data[gate]" size="50" value="%s" >',
-      isset($this->add_gate_data['gate']) ? esc_attr($this->add_gate_data['gate']) : ''
+      '<input id="temporal-gate-name" name="temporal_add_gate_data[gate-name]" size="50" value="%s" >',
+      isset($this->add_gate_data['gate']) ? esc_attr($this->add_gate_data['gate-name']) : ''
     );
     echo '</div>';
   }
@@ -533,7 +553,6 @@ class Temporal {
     global $wpdb;
     //$d    = date('0000-00-00 00:00:00');
     $pwd  = bin2hex(openssl_random_pseudo_bytes(4)); // Generate an 8 character string
-
     $data = $wpdb->insert(
       EV_TABLE_NAME,
       [
@@ -560,7 +579,7 @@ class Temporal {
     $data = $wpdb->insert(
       EV_TABLE_GATES_NAME,
       [
-        'name'                 => $input['gate'],
+        'name'                 => $input['gate-name'],
         'pids'                 => $input['pids'],
         'welcome_pid'          => $input['welcome-pid'],
         'content_after_fields' => $input['content-after-fields'],
@@ -591,9 +610,9 @@ class Temporal {
     return $remaining;
   }
 
-  public function output_data_atts($username, $gate, $pids, $welcome_pid) {
+  public function output_data_atts($username, $gate_id, $gate_name, $pids, $welcome_pid) {
     $welcome_url = get_the_permalink($welcome_pid);
-    return '<div id="temporal-invitee" style="display:none;" data-temporal-username="' . $username . '" data-temporal-gate="' . $gate . '" data-temporal-url="' . $welcome_url . '?temporal-pid=' . $pids . '&temporal-err=101"></div>';
+    return '<div id="temporal-invitee" style="display:none;" data-temporal-username="' . $username . '" data-temporal-gate="' . $gate_id . '" data-temporal-gate-name="' . $gate_name . '" data-temporal-url="' . $welcome_url . '?temporal-pid=' . $pids . '&temporal-err=101"></div>';
   }
 
   public function create_session_vars($username) {
@@ -663,11 +682,9 @@ class Temporal {
     // Check pids and set up redirect
     foreach ($results as $gate) :
 
-      $gates = explode(',', $gate['pids']);
+      $gated_posts = $this->gated_posts_array($gate['pids']);
 
-      $gates = ! empty($gates) ? $gates : [ intval($gate['pids']) ]; // Convert to array
-
-      if (in_array($post->ID, $gates)) :
+      if (in_array($post->ID, $gated_posts)) :
         // Gate found for this post
 
         if (isset($_POST['temporal_login'])) :
@@ -703,7 +720,7 @@ class Temporal {
               // No redirect.
               //echo 'Success';
               $this->create_session_vars($username);
-              echo $this->output_data_atts($username, $gate['name'], $gate['pids'], $gate['welcome_pid']); // Add data atts to page
+              echo $this->output_data_atts($username, $gate['id'], $gate['name'], $gate['pids'], $gate['welcome_pid']); // Add data atts to page
               return;
             }
 
@@ -716,7 +733,7 @@ class Temporal {
                 // No redirect.
                 //echo 'Success';
                 //$this->create_session_vars($username);
-                echo $this->output_data_atts($username, $gate['name'], $gate['pids'], $gate['welcome_pid']); // Add data atts to page
+                echo $this->output_data_atts($username, $gate['id'], $gate['name'], $gate['pids'], $gate['welcome_pid']); // Add data atts to page
                 return;
               }
 
@@ -754,7 +771,7 @@ class Temporal {
           //die();
             // Timestamp not expired.
             // No redirect.
-            echo $this->output_data_atts($username, $gate_name, $gate['pids'], $gate['welcome_pid']); // Add data atts to page
+            echo $this->output_data_atts($username, $gate['id'], $gate_name, $gate['pids'], $gate['welcome_pid']); // Add data atts to page
             //echo 'Success: session vars good!';
             return;
           }
@@ -804,18 +821,26 @@ class Temporal {
     return $fullcontent;
   }
 
+  // Adds timer and content at end of gated post content
   public function after_gate_content($content) {
+
     global $post;
     global $wpdb;
 
     $fullcontent = $content;
 
     // Get gates results
-    $query = "SELECT * FROM {$this->table_gates} WHERE pids = $post->ID LIMIT 1";
-    $row   = $wpdb->get_row($query, ARRAY_A);
+    //$query = "SELECT * FROM {$this->table_gates} WHERE pids = $post->ID LIMIT 1";
+    $query = "SELECT * FROM {$this->table_gates}";
+    $results = $wpdb->get_results($query, ARRAY_A);
 
-    if ($row) {
-      $fullcontent .= '<div id="temporal-timer" class="temporal-timer" data-temporal-remaining style="display:none;">Time Remaining: <span class="temporal-timer__time"></span></div>';
+    // Check pids and set up redirect
+    foreach ($results as $gate) {
+      $gated_posts = $this->gated_posts_array($gate['pids']);
+      
+      if (in_array($post->ID, $gated_posts)) {
+        $fullcontent .= '<div id="temporal-timer" class="temporal-timer" data-temporal-remaining style="display:none;">Time Remaining: <span class="temporal-timer__time"></span></div>';
+      }
     }
 
     return $fullcontent;

@@ -279,7 +279,7 @@ class Invitees_List extends WP_List_Table {
 		$gate = $item['gate'];
 
 		// Query wp_temporal_gates for welcome_pid
-    $query = "SELECT * FROM $table_gates WHERE name = '$gate'";
+    $query = "SELECT * FROM $table_gates WHERE id = '$gate'";
     $row   = $wpdb->get_row($query, ARRAY_A);
     $pid   = $row['pids'];
     $welcome_pid = $row['welcome_pid'];
