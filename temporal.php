@@ -104,6 +104,10 @@ class Temporal {
 
 	// class constructor
 	public function __construct() {
+
+    // Plugin URL
+    $this->plugin_url = plugin_dir_url( __FILE__ );
+
 		add_filter( 'set-screen-option', [ __CLASS__, 'set_screen' ], 10, 3 );
 		add_action( 'admin_menu', [ $this, 'plugin_menu' ] );
 
@@ -132,11 +136,8 @@ class Temporal {
     // Shortcodes
     add_shortcode( 'temporal_welcome_form', [$this, 'welcome_form_shortcode_init']);
 
-    // Plugin URL
-    $this->plugin_url = plugin_dir_url( __FILE__ );
-
     // Enqueue scripts and styles
-    $this->gate_scripts_and_styles();
+    add_action('wp_enqueue_scripts', [ $this, 'gate_scripts_and_styles']);    
 	}
 
 
@@ -333,14 +334,14 @@ class Temporal {
   }
 
 	// Enables session variables in WordPress
-  private function start_session() {
+  public function start_session() {
     if(!session_id()) {
       session_start();
     }
   }
 
   // Destroys session variables in WordPress
-  private function end_session() {
+  public function end_session() {
     session_destroy();
   }
 
@@ -544,8 +545,8 @@ class Temporal {
   }
 
   public function update_settings($input) {
-    update_option('temporal_settings', [ 'duration' => $input['duration'],
-                                           'duration-secondary' => $input['duration-secondary'] ]);
+    return update_option('temporal_settings', [ 'duration' => $input['duration'],
+                                                'duration-secondary' => $input['duration-secondary'] ]);
   }
 
   public function add_new($input) {
@@ -670,7 +671,10 @@ class Temporal {
   // The template_redirect for the gated pids
   public function set_up_redirects() {
 
-    session_start();
+    // If no session exists, start session
+    if (session_status() == PHP_SESSION_NONE) {
+      session_start();
+    }
 
     global $post;
     global $wpdb;

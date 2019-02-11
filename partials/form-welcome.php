@@ -8,11 +8,11 @@ $err_overrides = [ 101 => $row['content_expired'] ];
 ?>
 
 <div class="temporal-welcome-form">
-  <?php if($sanitized['temporal-err']) : ?>
+  <?php if(isset($sanitized['temporal-err'])) : ?>
   <p><?php echo $this->temporal_errors($sanitized['temporal-err'], $err_overrides); ?></p>
   <?php endif; ?>
   <?php 
-  if($sanitized['temporal-err'] && $sanitized['temporal-err'] == 101) :
+  if(isset($sanitized['temporal-err']) && $sanitized['temporal-err'] == 101) :
     // If expired, no form
   else : ?>
   <form method="post" action="<?php the_permalink($sanitized['temporal-pid']); ?>">

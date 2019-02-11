@@ -3,8 +3,10 @@
  * Invitees admin page
  */
 
-$this->add_data = $this->sanitize($_POST['temporal_add_data']);
-$this->settings_data = $this->sanitize($_POST['temporal_settings']);
+$this->add_data      = isset($_POST['temporal_add_data']) ?
+                       $this->sanitize($_POST['temporal_add_data']) : [];
+$this->settings_data = isset($_POST['temporal_settings']) ?
+                       $this->sanitize($_POST['temporal_settings']) : [];
 
 if (count($this->add_data)) {
   $data = $this->add_new($this->add_data);
