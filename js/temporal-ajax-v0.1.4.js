@@ -2,196 +2,207 @@
 
 var Temporal = Temporal || {};
 
-(function ($) {
+Temporal.App = ( function($) {
 
-  Temporal.init = function() {
-    var defaults = {
-          'invitee'         : $('#temporal-invitee'),
-          'timer'           : $('#temporal-timer'),
-          'triggerSelector' : '[data-temporal-trigger]',
-        };
+  return {
 
-    for (var prop in defaults) {
-      if (typeof Temporal[prop] === 'undefined') {
-        Temporal[prop] = defaults[prop];
-      }
-    }
+    init: function() {
+      var app      = this, // Store reference to Temporal.App object
+          defaults = {
+            'invitee'         : $('#temporal-invitee'),
+            'timer'           : $('#temporal-timer'),
+            'triggerSelector' : '[data-temporal-trigger]',
+          };
 
-    if (Temporal.invitee.length) {
-      Temporal.username = Temporal.invitee.attr('data-temporal-username');
-      Temporal.gateName = Temporal.invitee.attr('data-temporal-gate-name');
-      Temporal.gateId   = Temporal.invitee.attr('data-temporal-gate');
-      Temporal.url      = Temporal.invitee.attr('data-temporal-url');
-      Temporal.ajaxCheckTime(true);
-    }
-
-    //if (Temporal.trigger.length) {
-    $(document).on('click', Temporal.triggerSelector ,function(e) {
-      e.preventDefault();
-
-      var gateId = $(this).attr('data-temporal-gate') || Temporal.gateId;
-
-      Temporal.startSecondaryTimer(gateId);
-
-    }); 
-    //}
-  };
-
-  // Adds leading zeros to single digits
-  Temporal.zeroPad = function(num, size) {
-    var s = '0' + num;
-    return s.substr(s.length - size);
-  };
-
-  // Assembles the hours/minutes/seconds for the timer
-  Temporal.getHMS = function (totalSeconds) {
-    var hour      = totalSeconds / 3600,
-        hourInt   = Math.floor(hour),
-        hourDec   = hour % 1,
-        min       = hourDec * 60,
-        minInt    = Math.floor(min),
-        minDec    = min % 1,
-        sec       = Math.floor(minDec * 60),
-        hourStr   = hourInt + '',
-        minStr    = Temporal.zeroPad(minInt, 2),
-        secStr    = Temporal.zeroPad(sec, 2),
-        remaining = hourStr + ':' + minStr + ':' + secStr;
-    return remaining;
-  };
-
-  Temporal.ajaxCheckTime = function (initTimer=false) {
-    $.ajax({
-      url: frontendajax.ajaxurl,
-      data: {
-        'action' : 'temporal_ajax_check_time',
-        'username' : Temporal.username,
-        'gate' : Temporal.gateId
-      },
-      success:function(data) {
-
-        if (data == 'expired') {
-          // Expired
-          window.location.href = Temporal.url;
+      for (var prop in defaults) {
+        if (typeof app[prop] === 'undefined') {
+          app[prop] = defaults[prop];
         }
+      }
 
-        else {
-          // Not yet expired
+      if (app.invitee.length) {
+        app.username = app.invitee.attr('data-temporal-username');
+        app.gateName = app.invitee.attr('data-temporal-gate-name');
+        app.gateId   = app.invitee.attr('data-temporal-gate');
+        app.url      = app.invitee.attr('data-temporal-url');
+        app.ajaxCheckTime(true);
+      }
 
-          try {
-            var obj = JSON.parse(data);
+      $(document).on('click', app.triggerSelector ,function(e) {
+        e.preventDefault();
 
-            // If neccessary, initiate the timer
-            if (initTimer) {
+        var gateId = $(this).attr('data-temporal-gate') || app.gateId;
 
-              // If secondary event has been triggered and the timer is not visible...
-              if (obj.secondary && Temporal.timer.not(':visible')) {
-                Temporal.timer.show();
+        app.startSecondaryTimer(gateId);
+
+      }); 
+      //}
+    },
+
+    // Adds leading zeros to single digits
+    zeroPad: function(num, size) {
+      var s = '0' + num;
+      return s.substr(s.length - size);
+    },
+
+    // Assembles the hours/minutes/seconds for the timer
+    getHMS: function (totalSeconds) {
+      var app       = this, // Store reference to Temporal.App object
+          hour      = totalSeconds / 3600,
+          hourInt   = Math.floor(hour),
+          hourDec   = hour % 1,
+          min       = hourDec * 60,
+          minInt    = Math.floor(min),
+          minDec    = min % 1,
+          sec       = Math.floor(minDec * 60),
+          hourStr   = hourInt + '',
+          minStr    = app.zeroPad(minInt, 2),
+          secStr    = app.zeroPad(sec, 2),
+          remaining = hourStr + ':' + minStr + ':' + secStr;
+      return remaining;
+    },
+
+    ajaxCheckTime: function (initTimer=false) {
+      var app = this; // Store reference to Temporal.App object
+
+      $.ajax({
+        url: frontendajax.ajaxurl,
+        data: {
+          'action' : 'temporal_ajax_check_time',
+          'username' : app.username,
+          'gate' : app.gateId
+        },
+        success:function(data) {
+
+          if (data == 'expired') {
+            // Expired
+            window.location.href = app.url;
+          }
+
+          else {
+            // Not yet expired
+
+            try {
+              var obj = JSON.parse(data);
+
+              // If neccessary, initiate the timer
+              if (initTimer) {
+
+                // If secondary event has been triggered and the timer is not visible...
+                if (obj.secondary && app.timer.not(':visible')) {
+                  app.timer.show();
+                }
+
+                app.timer.attr('data-temporal-remaining', obj.remaining);
+                app.startInterval(obj.secondary);
               }
+            }
 
-              Temporal.timer.attr('data-temporal-remaining', obj.remaining);
-              Temporal.startInterval(obj.secondary);
+            catch(err) {
+              console.log('Problem with JSON object: ');
+              console.log(data);
             }
           }
+        },
+        error: function(errorThrown) {
+          console.log(errorThrown);
+        }
+      });
+    },
 
-          catch(err) {
-            console.log('Problem with JSON object: ');
-            console.log(data);
+    startInterval: function(secondaryTriggered) {
+      var app     = this, // Store reference to Temporal.App object
+          counter = 0;
+
+      // Clear interval if interval has already been set
+      if (typeof app.timeCheckInterval !== 'undefined') {
+        clearInterval(app.timeCheckInterval);
+      }
+
+      app.timeCheckInterval = setInterval(function() {
+
+        console.log('interval');
+   
+        var timer = app.timer;
+
+        if (secondaryTriggered) {
+
+          // Event was triggered but timer is missing from the DOM,
+          // so let's redirect
+          if (!timer.length) {
+            window.location.href = app.url;
+          }
+
+          // Timer exists in DOM
+          else {
+
+            var timerRemaining = timer.attr('data-temporal-remaining');
+
+            timerRemaining = parseInt(timerRemaining) - 1;
+
+            if (!timerRemaining) {
+              // Timer is 0, redirect
+              window.location.href = app.url;
+            }
+
+            var timerText = app.getHMS(timerRemaining);
+
+            timer.attr('data-temporal-remaining', timerRemaining);
+
+            // Update the timer if it is visible
+            if (timer.is(':visible')) {
+              timer.children('.temporal-timer__time').html(timerText);
+            }
+
+            if (counter % 10 == 0) {
+              app.ajaxCheckTime();             
+            }
           }
         }
-      },
-      error: function(errorThrown) {
-        console.log(errorThrown);
-      }
-    });
-  };
+        
+        counter++;  
+      }, 1000); // Every 1 second
+    },
+    
+    startSecondaryTimer: function(gateId) {
 
-  Temporal.startInterval = function(secondaryTriggered) {
-    // Using anonymous function so we can pass params inside setInterval
-    var counter = 0;
+      console.log('gateId:');
+      console.log(gateId);
 
-    // Clear interval if interval has already been set
-    if (typeof Temporal.timeCheckInterval !== 'undefined') {
-      clearInterval(Temporal.timeCheckInterval);
+      var app    = this, // Store reference to Temporal.App object
+          gateId = gateId || app.gateId;
+
+      $.ajax({
+        url: frontendajax.ajaxurl,
+        data: {
+          'action'   : 'temporal_ajax_init_secondary',
+          'username' : app.username,
+          'gate'     : gateId
+        },
+
+        success: function(data) {
+          console.log(data);
+          if (data == 'success') {
+            // Secondary timer has been initiated in the db
+            // Do the initial Ajax call to initiate the timer
+            app.ajaxCheckTime(true)
+          }
+          else {
+            // Problem updating the database
+          }
+        },
+
+        error: function(errorThrown) {
+          console.log(errorThrown);
+        }
+      });
     }
-
-    Temporal.timeCheckInterval = setInterval(function() {
-
-      console.log('interval');
- 
-      var timer = Temporal.timer;
-
-      if (secondaryTriggered) {
-
-        // Event was triggered but timer is missing from the DOM,
-        // so let's redirect
-        if (!timer.length) {
-          window.location.href = Temporal.url;
-        }
-
-        // Timer exists in DOM
-        else {
-
-          var timerRemaining = timer.attr('data-temporal-remaining');
-
-          timerRemaining = parseInt(timerRemaining) - 1;
-
-          if (!timerRemaining) {
-            // Timer is 0, redirect
-            window.location.href = Temporal.url;
-          }
-
-          var timerText = Temporal.getHMS(timerRemaining);
-
-          timer.attr('data-temporal-remaining', timerRemaining);
-
-          // Update the timer if it is visible
-          if (timer.is(':visible')) {
-            timer.children('.temporal-timer__time').html(timerText);
-          }
-
-          if (counter % 10 == 0) {
-            Temporal.ajaxCheckTime();             
-          }
-        }
-      }
-      
-      counter++;  
-    }, 1000); // Every 1 second
   };
-  
-  Temporal.startSecondaryTimer = function(gateId) {
-
-    var gateId = gateId || Temporal.gateId;
-
-    $.ajax({
-      url: frontendajax.ajaxurl,
-      data: {
-        'action'   : 'temporal_ajax_init_secondary',
-        'username' : Temporal.username,
-        'gate'     : gateId
-      },
-
-      success: function(data) {
-        console.log(data);
-        if (data == 'success') {
-          // Secondary timer has been initiated in the db
-          // Do the initial Ajax call to initiate the timer
-          Temporal.ajaxCheckTime(true)
-        }
-        else {
-          // Problem updating the database
-        }
-      },
-
-      error: function(errorThrown) {
-        console.log(errorThrown);
-      }
-    });
-  };
-
-  $(document).ready(function() {
-    Temporal.init();  
-  });
-
-
 })( jQuery );
+
+// DOM ready before we initialize
+jQuery(document).ready(function($) {
+  // Initialize the Temporal.App object
+  var temporal = Temporal.App;
+  temporal.init();
+});
