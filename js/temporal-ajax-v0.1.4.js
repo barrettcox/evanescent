@@ -36,7 +36,7 @@ Temporal.App = ( function($) {
         app.startSecondaryTimer(gateId);
 
       }); 
-      //}
+      
     },
 
     // Adds leading zeros to single digits

@@ -270,7 +270,7 @@ class Temporal {
       }
       else {
         // Update secondary value and timestamp in db
-        $query = "UPDATE {$this->table}  SET init_secondary = 1, timestamp = '$dt' WHERE username = '$username' and gate = '$gate'";
+        $query = "UPDATE {$this->table} SET init_secondary = 1, timestamp = '$dt' WHERE username = '$username' and gate = '$gate'";
         $result = $wpdb->query($query);
 
         if($result) {
@@ -428,7 +428,7 @@ class Temporal {
 
   public function username_cb() {
     echo '<div>';
-    echo '<label for="temporal-username">username</label>';
+    echo '<label for="temporal-username">Username</label>';
     printf(
       '<input id="temporal-username" name="temporal_add_data[username]" size="50" value="%s" >',
       isset($this->add_data['username']) ? esc_attr($this->add_data['username']) : ''
@@ -595,6 +595,7 @@ class Temporal {
   public function timestamp_expired($timestamp, $duration) {
     $time = strtotime($timestamp);
     $curtime = time();
+
     if(($curtime - $time) <= $duration) {
       return false; // Not expired
     }
@@ -702,8 +703,6 @@ class Temporal {
 
           // Login matches
           if ($row && count($row) > 1) :
-
-            // Login matches, keep going...
             $viewed  = boolval($row['viewed']) ? true : false;
             $expired = boolval($row['expired']) ? true : false;
             $dt      = date('Y-m-d H:i:s'); // Current date/time
@@ -720,9 +719,9 @@ class Temporal {
               // Not previously viewed, so mark the video as 'viewed' and update the timestamp
               $query = "UPDATE {$this->table}  SET viewed = 1, timestamp = '$dt' WHERE username = '$username' and gate = '" . $row['gate'] . "'";
               $result = $wpdb->query($query);
+
               // User has permission.
-              // No redirect.
-              //echo 'Success';
+              // Create session vars.
               $this->create_session_vars($username);
               echo $this->output_data_atts($username, $gate['id'], $gate['name'], $gate['pids'], $gate['welcome_pid']); // Add data atts to page
               return;
@@ -732,12 +731,14 @@ class Temporal {
               // Previously logged in and viewed, so let's check the timestamp
               $settings = get_option('temporal_settings');
               $duration = $settings ? $settings['duration'] : 3600; // Default to 3600 seconds (1 hour) if the option does not exist
+
               if(!$this->timestamp_expired($row['timestamp'], $duration)) { 
+
                 // Timestamp not expired. User has permission.
-                // No redirect.
-                //echo 'Success';
-                //$this->create_session_vars($username);
-                echo $this->output_data_atts($username, $gate['id'], $gate['name'], $gate['pids'], $gate['welcome_pid']); // Add data atts to page
+                $this->create_session_vars($username);
+
+                // Add data atts to page
+                echo $this->output_data_atts($username, $gate['id'], $gate['name'], $gate['pids'], $gate['welcome_pid']); 
                 return;
               }
 
@@ -755,28 +756,22 @@ class Temporal {
             return;
           endif;
 
+        // No login data, but session vars exists.
         elseif(isset($_SESSION['temporal_auth']) && $_SESSION['temporal_auth'] && isset($_SESSION['temporal_username'])) :
-          // No login data, but session vars already exists.
-
 
           // Query the db for timestamp
           $username  = $_SESSION['temporal_username'];
-          $gate_name = $gate['name'];
-          $query     = "SELECT * FROM {$this->table}  WHERE username = '$username' and gate = '$gate_name'";
+          $gate_id   = $gate['id'];
+          $query     = "SELECT * FROM {$this->table}  WHERE username = '$username' and gate = '$gate_id'";
           $row       = $wpdb->get_row($query, ARRAY_A);
 
           $settings = get_option('temporal_settings');
           $duration = $settings ? $settings['duration'] : 3600; // Default to 3600 seconds (1 hour) if the option does not exist
 
-
           if(!$this->timestamp_expired($row['timestamp'], $duration)) {
-          //echo 'duration';
-          //var_dump('');
-          //die();
-            // Timestamp not expired.
-            // No redirect.
-            echo $this->output_data_atts($username, $gate['id'], $gate_name, $gate['pids'], $gate['welcome_pid']); // Add data atts to page
-            //echo 'Success: session vars good!';
+            // Timestamp is not expired.
+            // Add data atts to page
+            echo $this->output_data_atts($username, $gate_id, $gate['name'], $gate['pids'], $gate['welcome_pid']); 
             return;
           }
 
