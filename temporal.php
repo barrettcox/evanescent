@@ -187,18 +187,28 @@ class Temporal {
    * Enqueue admin scripts and styles
    */
   public function admin_scripts_and_styles() {
-    wp_enqueue_style('temporal_admin', $this->plugin_url . 'css/temporal-admin-v0.1.4.css' );
+    $json     = file_get_contents($this->plugin_url . 'filerevs.json');
+    $filerevs = json_decode($json, true);
+    wp_enqueue_style('temporal_admin',
+                     $this->plugin_url . 'assets/css/temporal-admin.' . $filerevs['assets/css/temporal-admin.min.css'] . '.min.css' );
     wp_enqueue_script('jquery');
-    wp_enqueue_script('temporal_admin_script', $this->plugin_url . 'js/temporal-admin-v0.1.4.js', false, null, true );
+    wp_enqueue_script('temporal_admin_script',
+                      $this->plugin_url . 'assets/js/temporal-admin.' . $filerevs['assets/js/temporal-admin.min.js'] . '.min.js',
+                      false, null, true );
   }
 
   /**
    * Enqueue gate scripts and styles
    */
   public function gate_scripts_and_styles() {
-    wp_enqueue_style('temporal', $this->plugin_url . 'css/temporal-v0.1.4.css' );
+    $json     = file_get_contents($this->plugin_url . 'filerevs.json');
+    $filerevs = json_decode($json, true);
+    wp_enqueue_style('temporal',
+                     $this->plugin_url . 'assets/css/temporal.' . $filerevs['assets/css/temporal.min.css'] . '.min.css' );
     wp_enqueue_script('jquery');
-    wp_enqueue_script('temporal_ajax_script', $this->plugin_url . 'js/temporal-ajax-v0.1.4.js', false, null, true );
+    wp_enqueue_script('temporal_ajax_script',
+                      $this->plugin_url . 'assets/js/temporal-ajax.' . $filerevs['assets/js/temporal-ajax.min.js'] . '.min.js',
+                      false, null, true );
     wp_localize_script('temporal_ajax_script', 'frontendajax', array( 'ajaxurl' => admin_url( 'admin-ajax.php' )));
   }
 
@@ -235,7 +245,7 @@ class Temporal {
       }
       else {
         // Timestamp is expired.
-        set_expired($username, $gate, $welcome_pid);
+        $this->set_expired($username, $gate, $welcome_pid);
         echo 'expired';
       }
     }

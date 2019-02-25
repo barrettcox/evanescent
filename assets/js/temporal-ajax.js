@@ -62,7 +62,10 @@ Temporal.App = ( function($) {
       return remaining;
     },
 
-    ajaxCheckTime: function (initTimer=false) {
+    ajaxCheckTime: function (initTimer) {
+
+      var initTimer = typeof initTimer !== 'undefined' ? initTimer : false;
+
       var app = this; // Store reference to Temporal.App object
 
       $.ajax({
@@ -141,8 +144,10 @@ Temporal.App = ( function($) {
             timerRemaining = parseInt(timerRemaining) - 1;
 
             if (!timerRemaining) {
-              // Timer is 0, redirect
-              window.location.href = app.url;
+              // Timer is 0, so call ajaxCheckTime
+              // in order to mark user as expired redirect
+              app.ajaxCheckTime();
+             // window.location.href = app.url;
             }
 
             var timerText = app.getHMS(timerRemaining);
