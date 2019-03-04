@@ -9,13 +9,17 @@ $this->settings_data = isset($_POST['temporal_settings']) ?
                        $this->sanitize($_POST['temporal_settings']) : [];
 
 if (count($this->add_data)) {
-  $data = $this->add_new($this->add_data);
-  if ($data) $this->msg = 'New username added.';
+  $data      = $this->add_new($this->add_data);
+  $this->msg = [ 'success' => $data['success'],
+                 'message' =>  $data['message'] ];
 }
 
 if (count($this->settings_data)) {
   $data = $this->update_settings($this->settings_data);
-  if ($data) $this->msg = 'Settings updated.';
+  if ($data) $this->msg = [ 'success' => 1,
+                            'message' => 'Settings updated.' ];
+
+                          
 }
 ?>
     

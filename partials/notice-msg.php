@@ -2,8 +2,9 @@
 /*
  * Message notice box
  */
-?>
 
-<div id="msg" class="updated fade notice is-dismissible">
-  <p><?php echo $this->msg; ?></p>
+$notice_class = $this->msg['success'] ? 'updated' : 'error'; ?>
+
+<div id="msg" class="<?php echo $notice_class; ?> fade notice is-dismissible">
+  <p><?php echo $this->msg['message']; ?></p>
 </div>

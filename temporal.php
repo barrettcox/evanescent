@@ -562,9 +562,28 @@ class Temporal {
   public function add_new($input) {
 
     global $wpdb;
+
+    $data = [ 'success' => 0,
+              'message' => '' ];
+
+    if ($input['username'] == '') {
+      $data['message'] = 'Please enter a username.';
+      return $data;
+    }
+
+    // Check if username exists
+    $user_query  = "SELECT * FROM {$this->table} WHERE username = '{$input['username']}'";
+    $row         = $wpdb->get_row($user_query, ARRAY_A);
+    
+    // If username already exists...
+    if ($row) {
+     $data['message'] = 'The username <strong>' . $input['username'] . '</strong> already exists. Please enter a unique username.';
+     return $data;
+    }
+
     //$d    = date('0000-00-00 00:00:00');
     $pwd  = bin2hex(openssl_random_pseudo_bytes(4)); // Generate an 8 character string
-    $data = $wpdb->insert(
+    $user_add_result = $wpdb->insert(
       EV_TABLE_NAME,
       [
         // MySQL default for timestamp when added
@@ -579,6 +598,15 @@ class Temporal {
       ],
       ['%s', '%s', '%s', '%s', '%s', '%d', '%d']
     );
+
+    if ($user_add_result) {
+      $data['success'] = 1;
+      $data['message'] = 'New username added.';
+    }
+
+    else {
+      $data['message'] = 'There was a problem adding the username.';
+    }
 
     return $data;
   }
