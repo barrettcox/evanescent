@@ -191,7 +191,14 @@ class Temporal {
     $filerevs = json_decode($json, true);
     wp_enqueue_style('temporal_admin',
                      $this->plugin_url . 'assets/css/temporal-admin.' . $filerevs['assets/css/temporal-admin.min.css'] . '.min.css' );
-    wp_enqueue_script('jquery');
+    if(! wp_script_is('jquery', 'registered')) {
+      wp_register_script('jquery');
+    }
+
+    if(! wp_script_is('jquery', 'enqueued')) {
+      wp_enqueue_script('jquery');
+    }
+    
     wp_enqueue_script('temporal_admin_script',
                       $this->plugin_url . 'assets/js/temporal-admin.' . $filerevs['assets/js/temporal-admin.min.js'] . '.min.js',
                       false, null, true );
@@ -205,7 +212,14 @@ class Temporal {
     $filerevs = json_decode($json, true);
     wp_enqueue_style('temporal',
                      $this->plugin_url . 'assets/css/temporal.' . $filerevs['assets/css/temporal.min.css'] . '.min.css' );
-    wp_enqueue_script('jquery');
+    if(! wp_script_is('jquery', 'registered')) {
+      wp_register_script('jquery');
+    }
+
+    if(! wp_script_is('jquery', 'enqueued')) {
+      wp_enqueue_script('jquery');
+    }
+    
     wp_enqueue_script('temporal_ajax_script',
                       $this->plugin_url . 'assets/js/temporal-ajax.' . $filerevs['assets/js/temporal-ajax.min.js'] . '.min.js',
                       false, null, true );
