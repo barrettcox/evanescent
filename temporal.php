@@ -154,7 +154,7 @@ class Temporal {
 			'manage_options',
 			'temporal',
       '', //$callable function
-      'none' // $icon_url added via CSS
+      'dashicons-clock' // $icon_url added via CSS
 		);
 
     // Invitees admin page
