@@ -12,15 +12,24 @@
   margin-bottom: 15px;
 }
 
+.postbox--basic p {
+  margin: 0 0 1.3em 0;
+}
+
 .postbox--basic label {
   display: block;
   padding: 0.5em 2px;
 }
 
+.postbox--basic input,
 .postbox--basic input[type="text"],
 .postbox--basic input[type="password"],
 .postbox--basic input[type="email"] {
   margin-bottom: 15px;
+}
+
+.postbox--basic label {
+  font-weight: 600;
 }
 
 .temporal-username-row {
